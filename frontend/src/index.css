@@ -1,0 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=Allura&family=Bodoni+Moda:opsz,wght@6..96,400&family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root {
+ 
+  --text:black;
+  --bg: #fff;
+  --border: #e5e4e7;
+  --code-bg: #f4f3ec;
+  --accent: #aa3bff;
+  --accent-bg: rgba(170, 59, 255, 0.1);
+  --accent-border: rgba(170, 59, 255, 0.5);
+  --social-bg: rgba(244, 243, 236, 0.5);
+  --shadow:
+    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+
+  font: 18px/145% var(--sans);
+  letter-spacing: 0.18px;
+  color-scheme: light dark;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  @media (max-width: 1024px) {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: black
+    --text-h: #f3f4f6;
+    --bg: #f6f6f6;
+    
+    --code-bg: #1f2028;
+    --accent: #c084fc;
+    --accent-bg: rgba(192, 132, 252, 0.15);
+    --accent-border: rgba(192, 132, 252, 0.5);
+    --social-bg: rgba(47, 48, 58, 0.5);
+  
+  }
+
+  #social .button-icon {
+    filter: invert(1) brightness(2);
+  }
+}
+
+
+
+body {
+  margin: 0;
+}
+h1{
+  color: #E16364;
+}
+h2{
+  font-family: "Bodoni 72";
+}
+.form .ant-input:hover,
+.form .ant-input:focus,
+.form .ant-input-affix-wrapper:hover,
+.form .ant-input-affix-wrapper:focus-within {
+  border-color: #e16463;
+}
+
+.form .ant-input-affix-wrapper:focus-within {
+  box-shadow: 0 0 0 2px rgba(225, 100, 99, 0.15);
+}
+
+.form .ant-btn-primary {
+  background-color: #e16463;
+  border-color: #e16463;
+}
+
+.form .ant-btn-primary:hover {
+  background-color: #c95050 !important;
+  border-color: #c95050 !important;
+}
+.form{
+  display: flex;
+  flex-direction: column;
+}
+.product-name{
+  font-family: serif;
+
+}
+.product-price{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  justify-items: center;
+  font-family: "Inter", sans-serif;
+}
