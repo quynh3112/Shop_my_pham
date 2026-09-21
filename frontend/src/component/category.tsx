@@ -27,7 +27,7 @@ export default function CategoryMenu() {
   }
 
   return (
-    <div className="flex gap-8  px-8">
+    <div className="flex w-full justify-center gap-8 px-8">
         {categories.map((parent)=>(
     <Popover
     key={parent.id}

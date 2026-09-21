@@ -102,6 +102,14 @@ async getCart(userId:number):Promise<CartView>{
   return {items,itemCount,subtotal,shippingFee,total,hasUnavailableItems};
 }
 
+async getCartCount(userId: number): Promise<{ itemCount: number }> {
+  const cart = await this.ensureCart(userId);
+  const items = await this.itemRepo.find({ where: { cartId: cart.id } });
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  return { itemCount };
+}
+
 
 async addItem(userId:number,variantId:number,quantity:number):Promise<CartView>{
   const variant=await this.variantRepository.findOne({where:{id:variantId, },relations:{product:true}});
@@ -110,7 +118,7 @@ async addItem(userId:number,variantId:number,quantity:number):Promise<CartView>{
   }
   const label=variantLabel(variant.product.name,variant.size,variant.name);
   const cart =await this.ensureCart(userId);
-  const existingItem=await this.itemRepo.findOne({where:{id:cart.id,variantId}});
+  const existingItem=await this.itemRepo.findOne({where:{cartId:cart.id,variantId}});
   const nextQuantity=(existingItem?.quantity || 0)+quantity;
   if(nextQuantity>variant.stock){
      throw new ConflictException({
@@ -126,7 +134,7 @@ async addItem(userId:number,variantId:number,quantity:number):Promise<CartView>{
     await this.itemRepo.save(existingItem);
   }
   else{
-    const newItem=this.itemRepo.create({id:cart.id,variantId,quantity});
+    const newItem=this.itemRepo.create({cartId:cart.id,variantId,quantity});
     await this.itemRepo.save(newItem);
   }
   return this.getCart(userId);
@@ -134,7 +142,10 @@ async addItem(userId:number,variantId:number,quantity:number):Promise<CartView>{
 
 }
 private async findOwnedItem(userId:number,itemId:number):Promise<CartItem>{
-  const item=await this.itemRepo.findOne({where:{id:itemId},relations:{cart:true}});
+  const item=await this.itemRepo.findOne({
+    where:{id:itemId},
+    relations:{cart:true,variant:{product:true}},
+  });
   if(!item || item.cart.userId!==userId){
     throw new Error('Cart item not found');
   }

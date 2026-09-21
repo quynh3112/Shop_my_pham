@@ -11,7 +11,7 @@ export const createProduct=async(product:ProductCreate)=>{
     return res.data
 }
 export const getProducts=async(query?: ProductQuery)=>{
-    const res=await api.get(`${endpoint}`, { params: query })
+    const res=await api.get(endpoint, { params: query })
 
     return res.data
 }

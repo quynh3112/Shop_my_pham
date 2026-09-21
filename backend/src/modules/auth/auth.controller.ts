@@ -26,6 +26,7 @@ export class AuthController {
   }
   @Post('logout')
   logout(@Request() req){
+    
 
   }
 }

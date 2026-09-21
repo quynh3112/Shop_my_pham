@@ -47,9 +47,9 @@ import { AuthModule } from './modules/auth/auth.module';
     OrderItemModule,
     OrderStatusHistoryModule,
     InventoryMovementModule,
-    AuthModule
-    // ConversationModule,
-    // ChatMessageModule
+    AuthModule,
+    ConversationModule,
+    ChatMessageModule
   ],
   controllers: [AppController, RefreshtokenController],
   providers: [AppService],

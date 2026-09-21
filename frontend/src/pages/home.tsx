@@ -1,27 +1,11 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import Header from "../component/header";
 import useProduct from "../hooks/useProduct";
-import { ArrowRightOutlined, CarryOutOutlined, ShoppingCartOutlined } from "@ant-design/icons";
+import { ArrowRightOutlined, ShoppingCartOutlined } from "@ant-design/icons";
 import { Card } from "antd";
 
 export default function Home() {
-  const { products, fetchProducts, loading, error } = useProduct();
-
-  const featuredProduct = useMemo(() => {
-    if (!products.length) return null;
-
-    const sortedProducts = [...products].sort((a, b) => {
-      const soldDiff = Number(b.sold ?? 0) - Number(a.sold ?? 0);
-      if (soldDiff !== 0) return soldDiff;
-
-      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-
-      return bTime - aTime;
-    });
-
-    return sortedProducts[0];
-  }, [products]);
+  const { products, fetchProducts } = useProduct();
 
   useEffect(() => {
     void fetchProducts({ sort: "newest", page: 1, limit: 4 });
@@ -99,12 +83,12 @@ export default function Home() {
           ✦
         </span>
       </div>
-      <div className="ml-[50px]">
-        <h2 className="text-7xl font-['Bodoni_72'] font-bold w-[50%]">
+      <div className="mx-auto max-w-7xl px-6 py-8 lg:px-10">
+        <h2 className="w-full text-5xl font-['Bodoni_72'] font-bold md:w-[50%] md:text-7xl">
           <span className="font-['Allura']">our</span> PRODUCT CATEGORY
         </h2>
-        <div className="grid grid-cols-3 justify-center items-center">
-          <div className="group relative w-[411px] h-[515px] rounded-lg overflow-hidden">
+        <div className="mt-8 grid grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="group relative aspect-[4/5] w-full overflow-hidden rounded-lg">
             <img
               className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
               src="https://i.pinimg.com/1200x/a3/20/48/a320481f501bec266ffc9c8c494cff69.jpg"
@@ -121,7 +105,7 @@ export default function Home() {
               </span>
             </div>
           </div>
-          <div className=" group relative w-[411px] h-[515px] overflow-hidden rounded-lg">
+          <div className="group relative aspect-[4/5] w-full overflow-hidden rounded-lg">
             <img
               className=" w-full h-full object-cover group-hover:scale-105 transition duration-500"
               src="https://i.pinimg.com/736x/3a/cc/58/3acc58ff2232a962db63fd17cf0c51ad.jpg"
@@ -137,7 +121,7 @@ export default function Home() {
             </div>
 
           </div>
-          <div className=" group relative w-[411px] h-[515px] rounded-lg overflow-hidden">
+          <div className="group relative aspect-[4/5] w-full overflow-hidden rounded-lg">
             <img
               className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
               src="https://i.pinimg.com/1200x/2a/ab/1e/2aab1e2156a7873aeec72c2be82fefe4.jpg"

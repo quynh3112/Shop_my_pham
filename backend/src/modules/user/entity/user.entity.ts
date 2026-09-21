@@ -14,6 +14,8 @@ import { Order } from '../../order/entity/order.entity';
 import { RefreshToken } from 'src/modules/refreshtoken/entity/refresh_token.entity';
 import { OrderStatusHistory } from 'src/modules/order_status_history/entity/order_status_history';
 import { InventoryMovement } from 'src/modules/inventory_movement/entity/inventory_movement.entity';
+import { ChatMessage } from 'src/modules/chat_message/entity/chat_message.entity';
+import { Conversation } from 'src/modules/conversation/entity/conversation.entity';
 
 
 export enum Role {
@@ -87,24 +89,31 @@ export class User {
   )
   inventoryMovements!: InventoryMovement[];
 
-  // 1 User - N Conversation (Customer)
-//   @OneToMany(
-//     () => Conversation,
-//     (conversation) => conversation.customer,
-//   )
-//   customerConversations!: Conversation[];
+  // @OneToMany(
+  //   () => Conversation,
+  //   (conversation) => conversation.customer,
+  // )
+  // customerConversations!: Conversation[];
 
-  // 1 User - N Conversation (Admin)
-//   @OneToMany(
-//     () => Conversation,
-//     (conversation) => conversation.admin,
-//   )
-//   assignedConversations!: Conversation[];
+  // @OneToMany(
+  //   () => Conversation,
+  //   (conversation) => conversation.admin,
+  // )
+  // assignedConversations!: Conversation[];
 
-//   // 1 User - N ChatMessage
-//   @OneToMany(
-//     () => ChatMessage,
-//     (message) => message.sender,
-//   )
-//   chatMessages!: ChatMessage[];
+  // @OneToMany(
+  //   () => ChatMessage,
+  //   (message) => message.sender,
+  // )
+  // chatMessages!: ChatMessage[];
+  @OneToMany(() => Conversation, (conversation) => conversation.user)
+  customerConversations!: Conversation[];
+
+  // Các conversation mà user này (admin) được gán xử lý (ConversationAdmin)
+  @OneToMany(() => Conversation, (conversation) => conversation.assignedAdmin)
+  adminConversations!: Conversation[];
+
+  // Các tin nhắn mà user này đã gửi (ChatMessageSender)
+  @OneToMany(() => ChatMessage, (message) => message.sender)
+  sentChatMessages!: ChatMessage[];
 }

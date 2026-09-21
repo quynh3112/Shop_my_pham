@@ -6,6 +6,26 @@ export const login=async (data:Login)=>{
     return res.data
 
 }
+export const profile=async()=>{
+    const token=localStorage.getItem("token")
+    const res= await api.get(`${endpoint}/profile`,{
+        headers:{
+            Authorization:`Bearer ${token}`
+        }
+    })
+    return res.data
+}
+export const logout=async():Promise<void>=>{
+    const token=localStorage.getItem("token")
+    await api.post(`${endpoint}/logout`,
+        {
+             headers:{
+            Authorization:`Bearer ${token}`
+        }
+        }
+    )
+    
+}
 export const register=async (data:User)=>{
     const res=await api.post('/user/register',data)
     return res.data;

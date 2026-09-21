@@ -1,10 +1,13 @@
 import { ShoppingCartOutlined } from "@ant-design/icons";
 import {
   Button,
+  Dropdown,
   Form,
   Input,
   Modal,
   Tabs,
+  
+  type MenuProps,
   
   type TabsProps,
 } from "antd";
@@ -18,6 +21,7 @@ export default function Header() {
   const { handleLogin, handleRegister } = useAuth();
   const [form] = Form.useForm();
   const [isOpen, setIsOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [user] = useState(() => {
     const storedUser = localStorage.getItem("user");
     return storedUser ? JSON.parse(storedUser) : null;
@@ -36,7 +40,21 @@ export default function Header() {
     form.resetFields();
     setIsOpen(false);
   };
-  
+
+  const handleMenuClick: MenuProps["onClick"] = ({ key }) => {
+    if (key === "1") {
+      setIsProfileOpen(true);
+    } else if (key === "2") {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.reload();
+    }
+  };
+
+  const itemsDrop: MenuProps["items"] = [
+    { label: "Profile", key: "1" },
+    { label: "Đăng xuất", key: "2" },
+  ];
 
  
   const items: TabsProps["items"] = [
@@ -94,31 +112,36 @@ export default function Header() {
 
   return (
     <>
-      <div className="flex flex-row justify-between ml-[50px] ">
-        <div className="text-3xl font-bold ">
-          <h1 className="font-['Cormorant_Garamond']">LUNELLE</h1>
-        </div>
-        <CategoryMenu/>
-        <div className="mt-2 flex items-center gap-5 mr-[50px]">
+      <div className="flex flex-col">
+        <div className="flex items-center justify-between px-6 py-3 lg:px-12">
+          <div className="text-3xl font-bold">
+            <h1 className="font-['Cormorant_Garamond']">LUNELLE</h1>
+          </div>
+          <div className="flex items-center gap-5">
           <Search placeholder="Tìm kiếm" />
 
-          <ShoppingCartOutlined className="text-2xl" />
+            <ShoppingCartOutlined className="text-2xl" />
 
-          {user ? (
-            <div className="flex items-center gap-2 cursor-pointer">
-              <img
-                src={
-                  user.avatarUrl ||
-                  "https://i.pinimg.com/736x/f4/c7/1c/f4c71c4050c8b01d4ec39ab4185bd23a.jpg"
-                }
-                alt="avatar"
+            {user ? (
+              <Dropdown menu={{ items: itemsDrop, onClick: handleMenuClick }}>
+                <a
+                  className="flex items-center gap-2 whitespace-nowrap"
+                  onClick={(e) => e.preventDefault()}
+                >
+                <img
+                  src={
+                    user.avatarUrl ||
+                    "https://i.pinimg.com/736x/f4/c7/1c/f4c71c4050c8b01d4ec39ab4185bd23a.jpg"
+                  }
+                  alt="avatar"
                 className="w-9 h-9 rounded-full object-cover"
               />
 
               <span className="text-[#E16463] font-medium">
                 {user.fullName}
               </span>
-            </div>
+              </a>
+            </Dropdown>
           ) : (
             <button
               className="bg-[#E16463] rounded-lg text-white px-3 py-1.5"
@@ -127,6 +150,10 @@ export default function Header() {
               Login
             </button>
           )}
+          </div>
+        </div>
+        <div className="flex justify-center border-t border-[#f3d4d7]">
+          <CategoryMenu />
         </div>
         <Modal open={isOpen} footer={null} onCancel={handleClose}>
           <Tabs
@@ -140,6 +167,31 @@ export default function Header() {
             items={items}
             centered
           />
+        </Modal>
+        <Modal
+          title="Profile"
+          open={isProfileOpen}
+          footer={null}
+          onCancel={() => setIsProfileOpen(false)}
+        >
+          {user && (
+            <div className="flex flex-col items-center gap-4 py-4">
+              <img
+                src={
+                  user.avatarUrl ||
+                  "https://i.pinimg.com/736x/f4/c7/1c/f4c71c4050c8b01d4ec39ab4185bd23a.jpg"
+                }
+                alt="avatar"
+                className="h-24 w-24 rounded-full object-cover"
+              />
+              <div className="w-full space-y-2 text-center">
+                <h2 className="text-xl font-semibold">{user.fullName}</h2>
+                <p>Email: {user.email}</p>
+                <p>Phone: {user.phone || "Chưa cập nhật"}</p>
+                <p>Role: {user.role || "Customer"}</p>
+              </div>
+            </div>
+          )}
         </Modal>
       </div>
     </>

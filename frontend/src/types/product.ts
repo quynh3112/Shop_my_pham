@@ -15,7 +15,15 @@ export interface ProductItem {
     categoryId?: number
     isActive?: boolean
     image?: string
+    images?: string[]
+    stock?: number
     sold?: number
+    category?: {
+        id: number
+        name: string
+        slug?: string
+        parentId?: number | null
+    }
     variants?: ProductVariantCreate[]
     createdAt?: string
     updatedAt?: string
