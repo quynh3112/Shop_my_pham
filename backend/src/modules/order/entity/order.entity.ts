@@ -18,6 +18,7 @@ import { OrderStatus } from 'src/until/order_status';
 
 export enum PaymentMethod {
   COD = 'COD',
+  MOMO='MOMO'
 }
 
 export enum PaymentStatus {

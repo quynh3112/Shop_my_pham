@@ -1,10 +1,14 @@
 import './App.css'
-import Home from './pages/home'
-import MnBanner from './pages/mnBanner'
+import Header from './component/header'
+import Cart from './pages/cart'
 
 function App() {
   return (
-    <MnBanner/>
-  )}
+    <>
+      <Header />
+      <Cart />
+    </>
+  )
+}
 
 export default App

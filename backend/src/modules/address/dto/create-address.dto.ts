@@ -28,6 +28,12 @@ export class AddressCreateDto {
 
   @Transform(({ value }) => value?.trim())
   @IsString()
+  @IsNotEmpty({ message: 'Vui lòng nhập quận/huyện' })
+  @MaxLength(120)
+  district!: string;
+
+  @Transform(({ value }) => value?.trim())
+  @IsString()
   @IsNotEmpty({ message: 'Vui lòng nhập xã/phường/đặc khu' })
   @MaxLength(120)
   ward!: string;

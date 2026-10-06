@@ -15,10 +15,12 @@ import Search from "antd/es/transfer/search";
 import { useState } from "react";
 import type { Login, User } from "../types/user";
 import useAuth from "../hooks/useAuth";
+import useCart from "../hooks/useCart";
 import CategoryMenu from "./category";
 
 export default function Header() {
   const { handleLogin, handleRegister } = useAuth();
+  const { cart } = useCart();
   const [form] = Form.useForm();
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -120,7 +122,18 @@ export default function Header() {
           <div className="flex items-center gap-5">
           <Search placeholder="Tìm kiếm" />
 
-            <ShoppingCartOutlined className="text-2xl" />
+            <button
+              type="button"
+              aria-label="Mở giỏ hàng"
+              className="relative text-2xl text-[#2d2020] transition hover:text-[#e16463]"
+            >
+              <ShoppingCartOutlined />
+              {!!cart?.itemCount && (
+                <span className="absolute -right-3 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#e16463] px-1 text-[10px] font-medium text-white">
+                  {cart.itemCount}
+                </span>
+              )}
+            </button>
 
             {user ? (
               <Dropdown menu={{ items: itemsDrop, onClick: handleMenuClick }}>

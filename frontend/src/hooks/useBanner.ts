@@ -50,3 +50,4 @@ export default function useBanner() {
     isMutating: createMutation.isPending || updateMutation.isPending || statusMutation.isPending || deleteMutation.isPending,
   };
 }
+

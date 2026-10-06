@@ -1,63 +1,127 @@
-// import { Type } from 'class-transformer';
-// import { IsIn, IsInt, IsOptional, IsString, Min, IsDateString } from 'class-validator';
-// import type { OrderStatus, PaymentStatus, PaymentMethod } from '@prisma/client';
+// order.dto.ts
+import {
+  IsInt,
+  IsPositive,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Matches,
+  Min,
+  Max,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { OrderStatus as DomainOrderStatus } from 'src/until/order_status';
+import { PaymentStatus as DomainPaymentStatus } from '../entity/order.entity';
 
-// export class OrderCreateInput {
-//   @IsInt()
-//   addressId!: number;
+export const ORDER_STATUSES = Object.values(DomainOrderStatus);
+export type OrderStatus = DomainOrderStatus;
 
-//   @IsString()
-//   paymentMethod!: PaymentMethod;
+export const PAYMENT_METHODS = ['COD', 'MOMO'] as const;
+export type PaymentMethodValue = (typeof PAYMENT_METHODS)[number];
 
-//   @IsOptional()
-//   @IsString()
-//   note?: string;
-// }
+export const PAYMENT_STATUSES = Object.values(DomainPaymentStatus);
+export type PaymentStatusValue = DomainPaymentStatus;
 
-// export class OrderListQuery {
-//   @IsOptional()
-//   @IsString()
-//   status?: OrderStatus;
+// ----- Tạo đơn hàng -----
+export class OrderCreateDto {
+  @Type(() => Number)
+  @IsInt()
+  @IsPositive({ message: 'Vui lòng chọn địa chỉ giao hàng' })
+  addressId!: number;
 
-//   @Type(() => Number)
-//   @IsInt()
-//   @Min(1)
-//   page = 1;
+  @IsOptional()
+  @IsEnum(PAYMENT_METHODS)
+  paymentMethod: PaymentMethodValue = 'COD';
 
-//   @Type(() => Number)
-//   @IsInt()
-//   @Min(1)
-//   limit = 20;
-// }
+  @IsOptional()
+  @IsString()
+  @MaxLength(500, { message: 'Ghi chú quá dài' })
+  note?: string;
+}
 
-// export class AdminOrderListQuery extends OrderListQuery {
-//   @IsOptional()
-//   @IsString()
-//   paymentStatus?: PaymentStatus;
+export class OrderBuyNowDto extends OrderCreateDto {
+  @Type(() => Number)
+  @IsInt()
+  @IsPositive()
+  variantId!: number;
 
-//   @IsOptional()
-//   @IsString()
-//   paymentMethod?: PaymentMethod;
+  @Type(() => Number)
+  @IsInt()
+  @IsPositive()
+  quantity!: number;
+}
 
-//   @IsOptional()
-//   @IsString()
-//   search?: string;
+// ----- Query danh sách đơn (khách hàng) -----
+export class OrderListQueryDto {
+  @IsOptional()
+  @IsEnum(DomainOrderStatus)
+  status?: OrderStatus;
 
-//   @IsOptional()
-//   @IsDateString()
-//   from?: string;
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @IsPositive()
+  page: number = 1;
 
-//   @IsOptional()
-//   @IsDateString()
-//   to?: string;
-// }
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @IsPositive()
+  @Max(50)
+  limit: number = 10;
+}
 
-// export class UpdateOrderStatusInput {
-//   @IsIn(['CONFIRMED', 'SHIPPING', 'DELIVERED', 'CANCELLED'])
-//   status!: OrderStatus;
-// }
+/**
+ * Bộ lọc dành riêng cho admin. Trang khách không cần tìm theo mã hay theo
+ * người mua nên không dùng chung DTO — mỗi bên một bộ, khỏi lộ tham số
+ * lọc chéo tài khoản ra API công khai.
+ */
+export class AdminOrderListQueryDto extends OrderListQueryDto {
+  /** Tìm theo mã đơn, tên hoặc email người mua. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(191)
+  search?: string;
 
-// export class UpdatePaymentStatusInput {
-//   @IsIn(['PAID', 'UNPAID', 'FAILED', 'REFUNDED'])
-//   paymentStatus!: PaymentStatus;
-// }
+  @IsOptional()
+  @IsEnum(DomainPaymentStatus)
+  paymentStatus?: PaymentStatusValue;
+
+  @IsOptional()
+  @IsEnum(PAYMENT_METHODS)
+  paymentMethod?: PaymentMethodValue;
+
+  /** Khoảng ngày đặt, dạng YYYY-MM-DD. */
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Ngày không hợp lệ' })
+  from?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Ngày không hợp lệ' })
+  to?: string;
+}
+
+// ----- Đổi trạng thái đơn -----
+export class OrderStatusDto {
+  @IsEnum(DomainOrderStatus)
+  status!: OrderStatus;
+}
+
+/**
+ * Đánh dấu thanh toán thủ công: đơn chuyển khoản trước hoặc thu tiền hộ báo
+ * thất bại đều cần admin ghi nhận, máy trạng thái đơn không suy ra được.
+ */
+export class PaymentStatusDto {
+  @IsEnum(DomainPaymentStatus)
+  paymentStatus!: PaymentStatusValue;
+}
+
+// ----- Param mã đơn -----
+export class OrderCodeParamDto {
+  @IsString()
+  @MaxLength(32)
+  code!: string;
+}
