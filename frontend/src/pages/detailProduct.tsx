@@ -67,7 +67,9 @@ export default function DetailProduct({ productId }: Props) {
         />
         <div>
           <h1>{product.name}</h1>
-          <h1>{product.price?.toFixed(2)}</h1>
+          <p>Trạng thái:{product.stock && product.stock > 0 ? "Còn hàng" : "Hết hàng"}</p>
+          <h1>{product.price?.toFixed(2)} VND</h1>
+          
         </div>
       </div>
     </div>
