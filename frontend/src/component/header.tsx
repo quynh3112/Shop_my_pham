@@ -1,43 +1,21 @@
 import { ShoppingCartOutlined } from "@ant-design/icons";
-import {
-  Button,
-  Dropdown,
-  Form,
-  Input,
-  Modal,
-  Tabs,
-  
-  type MenuProps,
-  
-  type TabsProps,
-} from "antd";
+import { Dropdown, Modal, type MenuProps } from "antd";
 import Search from "antd/es/transfer/search";
 import { useState } from "react";
-import type { Login, User } from "../types/user";
-import useAuth from "../hooks/useAuth";
+import type { User } from "../types/user";
 import CategoryMenu from "./category";
+import Authencation from "./authencation";
 
 export default function Header() {
-  const { handleLogin, handleRegister } = useAuth();
-  const [form] = Form.useForm();
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [user] = useState(() => {
+  const [user, setUser] = useState<User | null>(() => {
     const storedUser = localStorage.getItem("user");
     return storedUser ? JSON.parse(storedUser) : null;
   });
-  const handleClose = () => {
-    setIsOpen(false);
-    form.resetFields();
-  };
-  const submitLogin = async (value: Login) => {
-    await handleLogin(value);
-    form.resetFields();
-    setIsOpen(false);
-  };
-  const submitRegister = async (value: User) => {
-    await handleRegister(value);
-    form.resetFields();
+
+  const handleLoginSuccess = (loggedUser: User) => {
+    setUser(loggedUser);
     setIsOpen(false);
   };
 
@@ -54,60 +32,6 @@ export default function Header() {
   const itemsDrop: MenuProps["items"] = [
     { label: "Profile", key: "1" },
     { label: "Đăng xuất", key: "2" },
-  ];
-
- 
-  const items: TabsProps["items"] = [
-    {
-      key: "1",
-      label: "Login",
-      children: (
-        <Form
-          className="form "
-          form={form}
-          onFinish={submitLogin}
-          layout="vertical"
-        >
-          <Form.Item name="email">
-            <Input placeholder="Email or phone" />
-          </Form.Item>
-          <Form.Item name="password">
-            <Input type="password" placeholder="Password" />
-          </Form.Item>
-          <Button htmlType="submit" type="primary">
-            Login
-          </Button>
-        </Form>
-      ),
-    },
-    {
-      key: "2",
-      label: "Register",
-      children: (
-        <Form
-          className="form"
-          form={form}
-          onFinish={submitRegister}
-          layout="vertical"
-        >
-          <Form.Item name="fullName">
-            <Input placeholder="Name" />
-          </Form.Item>
-          <Form.Item name="email">
-            <Input placeholder="Email" />
-          </Form.Item>
-          <Form.Item name="phone">
-            <Input placeholder="Phone" />
-          </Form.Item>
-          <Form.Item name="passwordHash">
-            <Input type="password" placeholder="Password" />
-          </Form.Item>
-          <Button htmlType="submit" type="primary">
-            Register
-          </Button>
-        </Form>
-      ),
-    },
   ];
 
   return (
@@ -155,19 +79,11 @@ export default function Header() {
         <div className="flex justify-center border-t border-[#f3d4d7]">
           <CategoryMenu />
         </div>
-        <Modal open={isOpen} footer={null} onCancel={handleClose}>
-          <Tabs
-            className="
-      [&_.ant-tabs-tab]:!text-black
-      [&_.ant-tabs-tab:hover]:!text-[#e16463]
-      [&_.ant-tabs-tab-active_.ant-tabs-tab-btn]:!text-[#e16463]
-      [&_.ant-tabs-ink-bar]:!bg-[#e16463]
-    "
-            defaultActiveKey="1"
-            items={items}
-            centered
-          />
-        </Modal>
+        <Authencation
+          open={isOpen}
+          onClose={() => setIsOpen(false)}
+          onLoginSuccess={handleLoginSuccess}
+        />
         <Modal
           title="Profile"
           open={isProfileOpen}

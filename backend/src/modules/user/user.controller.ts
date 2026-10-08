@@ -1,12 +1,8 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { UserService } from './user.service';
 
+// Đăng ký đã chuyển sang POST /auth/register (bắt buộc xác thực OTP qua email)
 @Controller('user')
 export class UserController {
     constructor(private readonly userService:UserService){}
-    @Post('register')
-    create(@Body()data:any){
-        return this.userService.create(data)
-
-    }
 }

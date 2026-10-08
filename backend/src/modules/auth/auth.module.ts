@@ -8,6 +8,7 @@ import { UserService } from '../user/user.service';
 import { UserModule } from '../user/user.module';
 import { LocalStrategy } from './passport/local.strategy';
 import { JwtStrategy } from './passport/jwt.strategy';
+import { OtpModule } from '../otp/otp.module';
 
 @Module({
   providers: [AuthService,LocalStrategy,JwtStrategy],
@@ -17,6 +18,6 @@ import { JwtStrategy } from './passport/jwt.strategy';
       signOptions: {
         expiresIn: '1h',
       },
-    }),TypeOrmModule.forFeature([RefreshToken]),UserModule]
+    }),TypeOrmModule.forFeature([RefreshToken]),UserModule,OtpModule]
 })
 export class AuthModule {}
