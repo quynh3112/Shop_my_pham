@@ -145,7 +145,8 @@ export class FavoritesService {
       productId: dto.productId,
     });
 
-    return this.favoriteRepo.save(favorite);
+    const savedFavorite = await this.favoriteRepo.save(favorite);
+    return this.findById(userId, savedFavorite.id);
   }
 
   async update(
@@ -183,7 +184,8 @@ export class FavoritesService {
     }
 
     favorite.productId = dto.productId;
-    return this.favoriteRepo.save(favorite);
+    const savedFavorite = await this.favoriteRepo.save(favorite);
+    return this.findById(userId, savedFavorite.id);
   }
 
   async remove(userId: number, id: number): Promise<{ deleted: boolean; id: number }> {
