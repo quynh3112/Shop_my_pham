@@ -1,7 +1,7 @@
 ﻿import { api } from "../config/api";
 import type { OrderCreate, OrderListQuery, OrderStatus } from "../types/order";
 
-const endpoint = "/order";
+const endpoint = "order";
 
 export const createOrder = async (payload: OrderCreate) => {
     const token = localStorage.getItem("token");

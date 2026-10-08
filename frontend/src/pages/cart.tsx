@@ -47,7 +47,7 @@ export default function Cart() {
     <main className="min-h-[calc(100vh-110px)] bg-[#fffafa] px-5 py-10 sm:px-8 lg:px-16 lg:py-16">
       <div className="mx-auto max-w-7xl">
         <div className="mb-10 flex items-end justify-between gap-4 border-b border-[#e8caca] pb-6">
-          <div><p className="font-['Allura'] text-2xl text-[#d77a7b]">your little ritual</p><h1 className="font-['Bodoni_72'] text-5xl font-medium text-[#2d2020] sm:text-6xl">Giỏ hàng</h1></div>
+          <div><h3 className="text-xl font-medium text-[#2d2020]">Giỏ hàng</h3></div>
           <p className="pb-1 text-sm text-[#987979]">{cart?.itemCount ?? 0} sản phẩm</p>
         </div>
         {error && <Alert className="mb-6" type="error" message="Không thể tải giỏ hàng" description={error} showIcon />}

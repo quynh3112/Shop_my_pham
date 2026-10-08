@@ -1,12 +1,10 @@
 import './App.css'
-import Header from './component/header'
-import Cart from './pages/cart'
+import DetailProduct from './pages/detailProduct'
 
 function App() {
   return (
     <>
-      <Header />
-      <Cart />
+      <DetailProduct productId={2} />
     </>
   )
 }

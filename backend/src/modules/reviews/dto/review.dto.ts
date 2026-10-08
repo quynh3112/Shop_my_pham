@@ -1,4 +1,3 @@
-import { PartialType } from '@nestjs/mapped-types';
 import { Transform, Type } from 'class-transformer';
 import {
   IsInt,
@@ -11,12 +10,6 @@ import {
 } from 'class-validator';
 
 export class CreateReviewDto {
-  @Type(() => Number)
-  @IsInt({ message: 'userId phải là số nguyên.' })
-  @Min(1, { message: 'userId phải lớn hơn 0.' })
-  @IsOptional()
-  userId?: number;
-
   @Type(() => Number)
   @IsInt({ message: 'productId phải là số nguyên.' })
   @Min(1, { message: 'productId phải lớn hơn 0.' })
@@ -37,7 +30,20 @@ export class CreateReviewDto {
   comment?: string;
 }
 
-export class UpdateReviewDto extends PartialType(CreateReviewDto) {}
+export class UpdateReviewDto {
+  @Type(() => Number)
+  @IsInt({ message: 'rating phải là số nguyên.' })
+  @Min(1, { message: 'rating tối thiểu là 1.' })
+  @Max(5, { message: 'rating tối đa là 5.' })
+  @IsOptional()
+  rating?: number;
+
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsOptional()
+  @IsString({ message: 'comment phải là chuỗi.' })
+  @MaxLength(1000, { message: 'comment tối đa 1000 ký tự.' })
+  comment?: string;
+}
 
 export class ReviewQueryDto {
   @IsOptional()

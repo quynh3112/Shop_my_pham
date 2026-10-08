@@ -35,6 +35,45 @@ export class ReviewsService {
     });
   }
 
+  async findByProductId(productId: number): Promise<Review[]> {
+    const product = await this.productRepo.findOne({
+      where: { id: productId },
+      select: { id: true },
+    });
+    if (!product) {
+      throw new NotFoundException('Không tìm thấy sản phẩm.');
+    }
+
+    return this.reviewRepo.find({
+      where: { productId },
+      relations: ['user'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findPurchasedProductsNotReviewed(userId: number): Promise<Product[]> {
+    return this.productRepo
+      .createQueryBuilder('product')
+      .innerJoin('product.orderItems', 'orderItem')
+      .innerJoin('orderItem.order', 'order')
+      .leftJoin(
+        'product.reviews',
+        'review',
+        'review.userId = :userId',
+        { userId },
+      )
+      .leftJoinAndSelect('product.images', 'image')
+      .where('order.userId = :userId', { userId })
+      .andWhere('order.status = :status', { status: OrderStatus.DELIVERED })
+      .andWhere('order.paymentStatus = :paymentStatus', {
+        paymentStatus: PaymentStatus.PAID,
+      })
+      .andWhere('review.id IS NULL')
+      .distinct(true)
+      .orderBy('product.name', 'ASC')
+      .getMany();
+  }
+
   async findById(id: number): Promise<Review> {
     const review = await this.reviewRepo.findOne({
       where: { id },
@@ -67,12 +106,7 @@ export class ReviewsService {
     }
   }
 
-  async create(data: CreateReviewDto): Promise<Review> {
-    const userId = data.userId;
-    if (!userId) {
-      throw new BadRequestException('userId là bắt buộc.');
-    }
-
+  async create(userId: number, data: CreateReviewDto): Promise<Review> {
     const [user, product] = await Promise.all([
       this.userRepo.findOne({ where: { id: userId } }),
       this.productRepo.findOne({ where: { id: data.productId } }),
@@ -106,11 +140,15 @@ export class ReviewsService {
     return this.reviewRepo.save(review);
   }
 
-  async update(id: number, data: UpdateReviewDto): Promise<Review> {
-    const review = await this.reviewRepo.findOne({ where: { id } });
+  async update(
+    userId: number,
+    id: number,
+    data: UpdateReviewDto,
+  ): Promise<Review> {
+    const review = await this.reviewRepo.findOne({ where: { id, userId } });
 
     if (!review) {
-      throw new NotFoundException('Không tìm thấy đánh giá.');
+      throw new NotFoundException('Không tìm thấy đánh giá của bạn.');
     }
 
     if (data.rating !== undefined) {
@@ -121,36 +159,17 @@ export class ReviewsService {
       review.comment = data.comment ?? null;
     }
 
-    const targetProductId = data.productId ?? review.productId;
-    const targetUserId = data.userId ?? review.userId;
-
-    if (data.productId !== undefined || data.userId !== undefined) {
-      const [product, user] = await Promise.all([
-        this.productRepo.findOne({ where: { id: targetProductId } }),
-        this.userRepo.findOne({ where: { id: targetUserId } }),
-      ]);
-
-      if (!product) {
-        throw new NotFoundException('Không tìm thấy sản phẩm.');
-      }
-
-      if (!user) {
-        throw new NotFoundException('Không tìm thấy người dùng.');
-      }
-
-      await this.assertUserCanReviewProduct(targetUserId, targetProductId);
-      review.productId = targetProductId;
-      review.userId = targetUserId;
-    }
-
     return this.reviewRepo.save(review);
   }
 
-  async remove(id: number): Promise<{ deleted: boolean; id: number }> {
-    const review = await this.reviewRepo.findOne({ where: { id } });
+  async remove(
+    userId: number,
+    id: number,
+  ): Promise<{ deleted: boolean; id: number }> {
+    const review = await this.reviewRepo.findOne({ where: { id, userId } });
 
     if (!review) {
-      throw new NotFoundException('Không tìm thấy đánh giá.');
+      throw new NotFoundException('Không tìm thấy đánh giá của bạn.');
     }
 
     await this.reviewRepo.remove(review);
