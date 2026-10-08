@@ -2,6 +2,8 @@ import { Category } from 'src/modules/category/entity/category.entity';
 import { OrderItem } from 'src/modules/order_item/entity/order-item.entity';
 import { ProductImage } from 'src/modules/productimage/entity/product_image.entity';
 import { ProductVariant } from 'src/modules/productvariant/entity/produc_variant.entity';
+import { Review } from 'src/modules/reviews/entity/review.entity';
+import { Favorite } from 'src/modules/favorites/entity/favorite.entity';
 import {
   Column,
   CreateDateColumn,
@@ -63,4 +65,10 @@ export class Product {
 
   @OneToMany(() => OrderItem, (orderItem) => orderItem.product)
   orderItems!: OrderItem[];
+
+  @OneToMany(() => Review, (review) => review.product)
+  reviews!: Review[];
+
+  @OneToMany(() => Favorite, (favorite) => favorite.product)
+  favorites!: Favorite[];
 }

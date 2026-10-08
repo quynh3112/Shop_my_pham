@@ -10,9 +10,7 @@ export interface CartItemView {
   unitPrice: number;
   quantity: number;
   lineTotal: number;
-  /** Tồn kho của đúng biến thể này, không phải tổng sản phẩm. */
   stock: number;
-  /** false khi sản phẩm ngừng bán hoặc biến thể không còn đủ hàng. */
   isAvailable: boolean;}
   
 export interface CartView {

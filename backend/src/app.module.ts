@@ -21,6 +21,9 @@ import { ConversationModule } from './modules/conversation/conversation.module';
 import { ChatMessageModule } from './modules/chat_message/chat_message.module';
 import { CategoryModule } from './modules/category/category.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { PaymentModule } from './modules/payment/payment.module';
+import { FavoritesModule } from './modules/favorites/favorites.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 
 @Module({
   imports:[
@@ -55,7 +58,10 @@ import { AuthModule } from './modules/auth/auth.module';
     InventoryMovementModule,
     AuthModule,
     ConversationModule,
-    ChatMessageModule
+    ChatMessageModule,
+    PaymentModule,
+    FavoritesModule,
+    ReviewsModule
   ],
   controllers: [AppController, RefreshtokenController],
   providers: [AppService],

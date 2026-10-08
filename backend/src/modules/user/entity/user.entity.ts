@@ -16,7 +16,8 @@ import { OrderStatusHistory } from 'src/modules/order_status_history/entity/orde
 import { InventoryMovement } from 'src/modules/inventory_movement/entity/inventory_movement.entity';
 import { ChatMessage } from 'src/modules/chat_message/entity/chat_message.entity';
 import { Conversation } from 'src/modules/conversation/entity/conversation.entity';
-
+import { Review } from 'src/modules/reviews/entity/review.entity';
+import { Favorite } from 'src/modules/favorites/entity/favorite.entity';
 
 export enum Role {
   USER = 'USER',
@@ -121,4 +122,10 @@ export class User {
   // Các tin nhắn mà user này đã gửi (ChatMessageSender)
   @OneToMany(() => ChatMessage, (message) => message.sender)
   sentChatMessages!: ChatMessage[];
+
+  @OneToMany(() => Review, (review) => review.user)
+  reviews!: Review[];
+
+  @OneToMany(() => Favorite, (favorite) => favorite.user)
+  favorites!: Favorite[];
 }

@@ -28,11 +28,9 @@ private readonly dataSource: DataSource) {}
         });
     }
    async createAddress(userId: number, input: AddressCreateDto) {
-    const { isDefault, ...fields } = input;
-
     return this.dataSource.transaction(async (manager) => {
       const existing = await manager.count(Address, { where: {user:{id:userId}} });
-      const makeDefault = isDefault === true || existing === 0;
+      const makeDefault = input.isDefault === true || existing === 0;
 
       if (makeDefault) {
         await manager.update(
@@ -42,16 +40,27 @@ private readonly dataSource: DataSource) {}
         );
       }
        return manager.save(
-        manager.create(Address, { ...fields, user: { id: userId }, isDefault: makeDefault }),
+        manager.create(Address, {
+          fullname: input.fullName,
+          phone: input.phone,
+          line: input.line1,
+          ward: input.ward,
+          district: input.district,
+          province: input.province,
+          user: { id: userId },
+          isDefault: makeDefault,
+        }),
       );
     });
   }
   async updateAddress(userId: number, id: number, input: AddressCreateDto) {
     const address=await this.findOwned(userId, id);
-    if(!address){
-        throw new Error('Address not found or does not belong to the user');
-    }
-    Object.assign(address, input);
+    address.fullname = input.fullName;
+    address.phone = input.phone;
+    address.line = input.line1;
+    address.ward = input.ward;
+    address.district = input.district;
+    address.province = input.province;
     return this.dataSource.getRepository(Address).save(address);
   }
   async setDefaultAddress(userId: number, id: number) {
