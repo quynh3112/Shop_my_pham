@@ -100,3 +100,45 @@ h2{
   justify-items: center;
   font-family: "Inter", sans-serif;
 }
+
+/* ----- Modal đăng nhập / đăng ký (component/authencation.tsx) ----- */
+.auth-modal .ant-modal-close {
+  border-radius: 999px;
+}
+/* Chrome tự điền mật khẩu: bỏ nền xanh mặc định */
+.auth-modal input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #fff inset;
+  box-shadow: 0 0 0 1000px #fff inset;
+}
+.auth-otp .ant-form-item-control-input-content {
+  display: flex;
+  justify-content: center;
+}
+.auth-modal .ant-otp .ant-otp-input {
+  width: clamp(40px, 11vw, 52px);
+  height: 56px;
+  font-size: 22px;
+  font-weight: 600;
+  border-radius: 14px;
+}
+.auth-otp .ant-form-item-explain {
+  text-align: center;
+}
+.auth-fade {
+  animation: auth-fade 0.35s ease;
+}
+@keyframes auth-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-fade {
+    animation: none;
+  }
+}

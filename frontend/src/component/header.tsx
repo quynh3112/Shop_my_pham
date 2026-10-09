@@ -1,4 +1,5 @@
 import { ShoppingCartOutlined } from "@ant-design/icons";
+<<<<<<< HEAD
 import {
   Alert,
   Button,
@@ -16,6 +17,12 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import type { Login, User } from "../types/user";
 import useAuth from "../hooks/useAuth";
+=======
+import { Dropdown, Modal, type MenuProps } from "antd";
+import Search from "antd/es/transfer/search";
+import { useState } from "react";
+import type { User } from "../types/user";
+>>>>>>> 40b063339a7d7d95efab10c3f168ef753504ab24
 import useCart from "../hooks/useCart";
 import useRequireLogin from "../hooks/useRequireLogin";
 import {
@@ -25,8 +32,10 @@ import {
   safeRedirectPath,
 } from "../utils/auth";
 import CategoryMenu from "./category";
+import Authencation from "./authencation";
 
 export default function Header() {
+<<<<<<< HEAD
   const { handleLogin, handleRegister, loading: authLoading, error: authError } = useAuth();
   const { cart } = useCart();
   const { requireLogin } = useRequireLogin();
@@ -35,9 +44,13 @@ export default function Header() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [messageApi, contextHolder] = message.useMessage();
   const [form] = Form.useForm();
+=======
+  const { cart } = useCart();
+>>>>>>> 40b063339a7d7d95efab10c3f168ef753504ab24
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("1");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+<<<<<<< HEAD
   const [user, setUser] = useState(getStoredUser);
 
   // Trang khác chuyển về "/?login=1" khi cần đăng nhập
@@ -83,6 +96,16 @@ export default function Header() {
     form.resetFields();
     setActiveTab("1");
     messageApi.success("Đăng ký thành công, vui lòng đăng nhập.");
+=======
+  const [user, setUser] = useState<User | null>(() => {
+    const storedUser = localStorage.getItem("user");
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+
+  const handleLoginSuccess = (loggedUser: User) => {
+    setUser(loggedUser);
+    setIsOpen(false);
+>>>>>>> 40b063339a7d7d95efab10c3f168ef753504ab24
   };
 
   const handleMenuClick: MenuProps["onClick"] = ({ key }) => {
@@ -108,6 +131,7 @@ export default function Header() {
     { label: "Đăng xuất", key: "2" },
   ];
 
+<<<<<<< HEAD
  
   const items: TabsProps["items"] = [
     {
@@ -162,6 +186,8 @@ export default function Header() {
     },
   ];
 
+=======
+>>>>>>> 40b063339a7d7d95efab10c3f168ef753504ab24
   return (
     <>
       {contextHolder}
@@ -230,6 +256,7 @@ export default function Header() {
         <div className="flex justify-center border-t border-[#f3d4d7]">
           <CategoryMenu />
         </div>
+<<<<<<< HEAD
         <Modal open={isLoginOpen} footer={null} onCancel={handleClose}>
           {loginRequested && (
             <Alert
@@ -255,6 +282,13 @@ export default function Header() {
             centered
           />
         </Modal>
+=======
+        <Authencation
+          open={isOpen}
+          onClose={() => setIsOpen(false)}
+          onLoginSuccess={handleLoginSuccess}
+        />
+>>>>>>> 40b063339a7d7d95efab10c3f168ef753504ab24
         <Modal
           title="Profile"
           open={isProfileOpen}

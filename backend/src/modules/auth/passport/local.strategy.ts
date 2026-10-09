@@ -14,7 +14,7 @@ export class LocalStrategy extends PassportStrategy(Strategy){
     async validate(key:string, password:string){
         const user=await this.userSerVice.validateUser(key,password)
         if(!user){
-            throw new UnauthorizedException('Unthorized')
+            throw new UnauthorizedException('Email/SĐT hoặc mật khẩu không đúng!')
            
         }
          return user

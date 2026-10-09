@@ -51,6 +51,11 @@ export class User {
   })
   role!: Role;
 
+  // Đăng ký mới tạo với false, nhập đúng OTP gửi qua email mới thành true.
+  // Mặc định true để tài khoản có sẵn (admin seed...) không bị khóa đăng nhập.
+  @Column({ default: true })
+  isEmailVerified!: boolean;
+
   @CreateDateColumn()
   createdAt!: Date;
 

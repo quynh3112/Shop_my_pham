@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Order } from '../order/entity/order.entity';
 import { RefreshToken } from '../refreshtoken/entity/refresh_token.entity';
+import type { RegisterDto } from '../auth/dto/auth.dto';
 @Injectable()
 export class UserService {
   constructor(
@@ -17,28 +18,39 @@ export class UserService {
     @InjectRepository(RefreshToken)
     private readonly refreshTokenRepo: Repository<RefreshToken>,
   ) {}
-  async create(data: User) {
+  /**
+   * Đăng ký: tạo tài khoản CHƯA xác thực email (chưa đăng nhập được).
+   * Bản đăng ký cũ chưa xác thực trùng email thì ghi đè, trùng SĐT thì xóa,
+   * để không ai giữ chỗ được email/SĐT của người khác mà không có OTP.
+   */
+  async createUnverified(data: RegisterDto) {
     const exisEmail = await this.userRepo.findOne({
       where: { email: data.email },
     });
-    if (exisEmail) {
+    if (exisEmail?.isEmailVerified) {
       throw new ConflictException('Email đã tồn tại!');
     }
     const exisPhone = await this.userRepo.findOne({
       where: { phone: data.phone },
     });
-    if (exisPhone) {
-      throw new ConflictException('SĐT đã tồn tại!');
+    if (exisPhone && exisPhone.id !== exisEmail?.id) {
+      if (exisPhone.isEmailVerified) {
+        throw new ConflictException('SĐT đã tồn tại!');
+      }
+      await this.userRepo.delete(exisPhone.id);
     }
-    const passwordHash = await bcrypt.hash(data.passwordHash, 10);
-    const user = this.userRepo.create({
-      
-      email: data.email,
-      passwordHash: passwordHash,
-      phone: data.phone,
-      fullName: data.fullName,
-    });
+    const user = exisEmail ?? this.userRepo.create({ email: data.email });
+    user.passwordHash = await bcrypt.hash(data.password, 10);
+    user.phone = data.phone;
+    user.fullName = data.fullName;
+    user.isEmailVerified = false;
     return this.userRepo.save(user);
+  }
+  findUnverifiedByEmail(email: string) {
+    return this.userRepo.findOne({ where: { email, isEmailVerified: false } });
+  }
+  async markEmailVerified(userId: number) {
+    await this.userRepo.update({ id: userId }, { isEmailVerified: true });
   }
   async getUserDetail(userId: number) {
     const user = await this.userRepo.findOne({
@@ -81,9 +93,14 @@ export class UserService {
     return { revoked: result.affected ?? 0 };
   }
 
+  // Tài khoản chưa xác thực email coi như chưa tồn tại (không đăng nhập,
+  // không quên mật khẩu được)
   async findUser(keys: string) {
     const user = await this.userRepo.findOne({
-      where: [{ email: keys }, { phone: keys }],
+      where: [
+        { email: keys, isEmailVerified: true },
+        { phone: keys, isEmailVerified: true },
+      ],
     });
     return user;
   }
@@ -97,6 +114,10 @@ export class UserService {
       return user
     }
     return null;
+  }
+  async updatePassword(userId: number, newPassword: string) {
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.userRepo.update({ id: userId }, { passwordHash });
   }
   async findUserById(userId:number){
     const user=await this.userRepo.findOne({where:{id:userId}})

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+<<<<<<< HEAD
 import { Alert, Spin, message } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import ProductDescription from "../component/productDescription";
@@ -8,6 +9,8 @@ import ProductRatingFavorite from "../component/productRatingFavorite";
 import Review from "../component/review";
 import useCart from "../hooks/useCart";
 import useRequireLogin from "../hooks/useRequireLogin";
+=======
+>>>>>>> 40b063339a7d7d95efab10c3f168ef753504ab24
 import { getProducById } from "../service/product.service";
 import type { ProductItem } from "../types/product";
 
