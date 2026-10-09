@@ -1,28 +1,15 @@
 import { ShoppingCartOutlined } from "@ant-design/icons";
-<<<<<<< HEAD
 import {
-  Alert,
-  Button,
   Dropdown,
-  Form,
   Input,
   Modal,
-  Tabs,
   message,
   type MenuProps,
-  type TabsProps,
 } from "antd";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import type { Login, User } from "../types/user";
-import useAuth from "../hooks/useAuth";
-=======
-import { Dropdown, Modal, type MenuProps } from "antd";
-import Search from "antd/es/transfer/search";
-import { useState } from "react";
 import type { User } from "../types/user";
->>>>>>> 40b063339a7d7d95efab10c3f168ef753504ab24
 import useCart from "../hooks/useCart";
 import useRequireLogin from "../hooks/useRequireLogin";
 import {
@@ -35,22 +22,14 @@ import CategoryMenu from "./category";
 import Authencation from "./authencation";
 
 export default function Header() {
-<<<<<<< HEAD
-  const { handleLogin, handleRegister, loading: authLoading, error: authError } = useAuth();
   const { cart } = useCart();
   const { requireLogin } = useRequireLogin();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [messageApi, contextHolder] = message.useMessage();
-  const [form] = Form.useForm();
-=======
-  const { cart } = useCart();
->>>>>>> 40b063339a7d7d95efab10c3f168ef753504ab24
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("1");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-<<<<<<< HEAD
   const [user, setUser] = useState(getStoredUser);
 
   // Trang khác chuyển về "/?login=1" khi cần đăng nhập
@@ -67,6 +46,10 @@ export default function Header() {
     };
   }, []);
 
+  useEffect(() => {
+    if (loginRequested && !user) messageApi.info("Vui lòng đăng nhập để tiếp tục.");
+  }, [loginRequested]);
+
   const clearLoginParams = () => {
     if (!loginRequested) return;
     const next = new URLSearchParams(searchParams);
@@ -77,35 +60,18 @@ export default function Header() {
 
   const handleClose = () => {
     setIsOpen(false);
-    form.resetFields();
     clearLoginParams();
   };
-  const submitLogin = async (value: Login) => {
-    if (!(await handleLogin(value))) return;
-    form.resetFields();
+
+  // Authencation đã lưu token và báo "Đăng nhập thành công"
+  const handleLoginSuccess = (loggedUser: User) => {
+    setUser(loggedUser);
     setIsOpen(false);
-    await queryClient.invalidateQueries();
-    messageApi.success("Đăng nhập thành công.");
+    void queryClient.invalidateQueries();
 
     const redirect = safeRedirectPath(searchParams.get("redirect"));
     if (redirect) navigate(redirect, { replace: true });
     else clearLoginParams();
-  };
-  const submitRegister = async (value: User) => {
-    if (!(await handleRegister(value))) return;
-    form.resetFields();
-    setActiveTab("1");
-    messageApi.success("Đăng ký thành công, vui lòng đăng nhập.");
-=======
-  const [user, setUser] = useState<User | null>(() => {
-    const storedUser = localStorage.getItem("user");
-    return storedUser ? JSON.parse(storedUser) : null;
-  });
-
-  const handleLoginSuccess = (loggedUser: User) => {
-    setUser(loggedUser);
-    setIsOpen(false);
->>>>>>> 40b063339a7d7d95efab10c3f168ef753504ab24
   };
 
   const handleMenuClick: MenuProps["onClick"] = ({ key }) => {
@@ -131,63 +97,6 @@ export default function Header() {
     { label: "Đăng xuất", key: "2" },
   ];
 
-<<<<<<< HEAD
- 
-  const items: TabsProps["items"] = [
-    {
-      key: "1",
-      label: "Login",
-      children: (
-        <Form
-          className="form "
-          form={form}
-          onFinish={submitLogin}
-          layout="vertical"
-        >
-          <Form.Item name="email">
-            <Input placeholder="Email or phone" />
-          </Form.Item>
-          <Form.Item name="password">
-            <Input type="password" placeholder="Password" />
-          </Form.Item>
-          <Button htmlType="submit" type="primary" loading={authLoading}>
-            Login
-          </Button>
-        </Form>
-      ),
-    },
-    {
-      key: "2",
-      label: "Register",
-      children: (
-        <Form
-          className="form"
-          form={form}
-          onFinish={submitRegister}
-          layout="vertical"
-        >
-          <Form.Item name="fullName">
-            <Input placeholder="Name" />
-          </Form.Item>
-          <Form.Item name="email">
-            <Input placeholder="Email" />
-          </Form.Item>
-          <Form.Item name="phone">
-            <Input placeholder="Phone" />
-          </Form.Item>
-          <Form.Item name="passwordHash">
-            <Input type="password" placeholder="Password" />
-          </Form.Item>
-          <Button htmlType="submit" type="primary" loading={authLoading}>
-            Register
-          </Button>
-        </Form>
-      ),
-    },
-  ];
-
-=======
->>>>>>> 40b063339a7d7d95efab10c3f168ef753504ab24
   return (
     <>
       {contextHolder}
@@ -256,39 +165,11 @@ export default function Header() {
         <div className="flex justify-center border-t border-[#f3d4d7]">
           <CategoryMenu />
         </div>
-<<<<<<< HEAD
-        <Modal open={isLoginOpen} footer={null} onCancel={handleClose}>
-          {loginRequested && (
-            <Alert
-              className="!mb-2 !mt-6"
-              type="info"
-              showIcon
-              message="Vui lòng đăng nhập để tiếp tục."
-            />
-          )}
-          {authError && (
-            <Alert className="!mb-2 !mt-2" type="error" showIcon message={authError} />
-          )}
-          <Tabs
-            className="
-      [&_.ant-tabs-tab]:!text-black
-      [&_.ant-tabs-tab:hover]:!text-[#e16463]
-      [&_.ant-tabs-tab-active_.ant-tabs-tab-btn]:!text-[#e16463]
-      [&_.ant-tabs-ink-bar]:!bg-[#e16463]
-    "
-            activeKey={activeTab}
-            onChange={setActiveTab}
-            items={items}
-            centered
-          />
-        </Modal>
-=======
         <Authencation
-          open={isOpen}
-          onClose={() => setIsOpen(false)}
+          open={isLoginOpen}
+          onClose={handleClose}
           onLoginSuccess={handleLoginSuccess}
         />
->>>>>>> 40b063339a7d7d95efab10c3f168ef753504ab24
         <Modal
           title="Profile"
           open={isProfileOpen}
