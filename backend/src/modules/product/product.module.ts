@@ -8,12 +8,19 @@ import { ProductVariant } from '../productvariant/entity/produc_variant.entity';
 import { Category } from '../category/entity/category.entity';
 import { CategoryService } from '../category/category.service';
 import { InventoryMovementService } from '../inventory_movement/inventory_movement.service';
+import { Favorite } from '../favorites/entity/favorite.entity';
 
 @Module({
   providers: [ProductService, CategoryService, InventoryMovementService],
   controllers: [ProductController],
   imports: [
-    TypeOrmModule.forFeature([Product, ProductImage, ProductVariant, Category]),
+    TypeOrmModule.forFeature([
+      Product,
+      ProductImage,
+      ProductVariant,
+      Category,
+      Favorite,
+    ]),
   ],
 })
 export class ProductModule {}

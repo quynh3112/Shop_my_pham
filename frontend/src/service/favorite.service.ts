@@ -29,4 +29,11 @@ export const removeMyFavorite = async (productId: number) => {
     headers: authHeaders(),
   });
   return res.data;
-};
+}
+;
+export const checkFavorite = async (productId: number) => {
+  const res = await api.get(`${endpoint}/my/${productId}`, {
+    headers: authHeaders(),
+  });
+  return res.data;
+}

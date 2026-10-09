@@ -30,12 +30,32 @@ export const getProducById=async(id:number)=>{
 }
 export const updateProduct=async(id:number,product:ProductUpdate)=>{
     const token=localStorage.getItem('token')
-    const res=await api.put(`${endpoint}/${id}`,product,{
+    const res=await api.patch(`${endpoint}/${id}`,product,{
         headers:{
             Authorization:`Bearer ${token}`
         }
     })
     return res.data
 }
-
-
+export const uploadDescriptionPdf=async(id:number,file:File)=>{
+    const token=localStorage.getItem('token')
+    const formData=new FormData()
+    formData.append('file',file)
+    const res=await api.post(`${endpoint}/${id}/description-pdf`,formData,{
+        headers:{
+            Authorization:`Bearer ${token}`
+        }
+    })
+    return res.data
+}
+export const removeDescriptionPdf=async(id:number)=>{
+    const token=localStorage.getItem('token')
+    const res=await api.delete(`${endpoint}/${id}/description-pdf`,{
+        headers:{
+            Authorization:`Bearer ${token}`
+        }
+    })
+    return res.data
+}
+export const toFileUrl=(path:string)=>
+    /^https?:\/\//.test(path) ? path : `${api.defaults.baseURL}${path}`

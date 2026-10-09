@@ -22,20 +22,19 @@ interface AuthenticatedRequest {
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
-
-
   @Get('product/:productId')
-  findByProductId(
-    @Param('productId', ParseIntPipe) productId: number,
-  ) {
+  findByProductId(@Param('productId', ParseIntPipe) productId: number) {
     return this.reviewsService.findByProductId(productId);
+  }
+
+  @Get('product/:productId/stats')
+  getProductRatingStats(@Param('productId', ParseIntPipe) productId: number) {
+    return this.reviewsService.getProductRatingStats(productId);
   }
 
   @Get('pending-products')
   @UseGuards(JwtAuthGuard)
-  findPurchasedProductsNotReviewed(
-    @Req() request: AuthenticatedRequest,
-  ) {
+  findPurchasedProductsNotReviewed(@Req() request: AuthenticatedRequest) {
     return this.reviewsService.findPurchasedProductsNotReviewed(
       request.user.userId,
     );
@@ -48,10 +47,7 @@ export class ReviewsController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  create(
-    @Body() dto: CreateReviewDto,
-    @Req() request: AuthenticatedRequest,
-  ) {
+  create(@Body() dto: CreateReviewDto, @Req() request: AuthenticatedRequest) {
     return this.reviewsService.create(request.user.userId, dto);
   }
 

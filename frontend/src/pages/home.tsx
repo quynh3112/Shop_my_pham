@@ -1,11 +1,14 @@
 import { useEffect } from "react";
-import Header from "../component/header";
+import { Link, useNavigate } from "react-router-dom";
 import useProduct from "../hooks/useProduct";
+import useRequireLogin from "../hooks/useRequireLogin";
 import { ArrowRightOutlined, ShoppingCartOutlined } from "@ant-design/icons";
 import { Card } from "antd";
 
 export default function Home() {
   const { products, fetchProducts } = useProduct();
+  const navigate = useNavigate();
+  const { requireLogin } = useRequireLogin();
 
   useEffect(() => {
     void fetchProducts({ sort: "newest", page: 1, limit: 4 });
@@ -13,7 +16,6 @@ export default function Home() {
 
   return (
     <div>
-      <Header />
       <div className="relative border border-[#e88f98] mt-10">
         {/* sparkle trên */}
         <span className="absolute -top-5 left-[20%] text-3xl text-[#c87985]">
@@ -40,9 +42,12 @@ export default function Home() {
               voluptas soluta? Nobis voluptatem neque dolores!
             </p>
           </div>
-          <button className="font-['Bodoni_72'] text-2xl border border-[#E16463] px-2 rounded-lg">
+          <Link
+            to="/products"
+            className="inline-block font-['Bodoni_72'] text-2xl border border-[#E16463] px-2 rounded-lg !text-inherit"
+          >
             Shop Now
-          </button>
+          </Link>
         </div>
         <div className="absolute right-16 top-12 h-[580px] w-[520px]">
           {/* Viền hồng phía sau */}
@@ -151,7 +156,10 @@ export default function Home() {
               key={product.id}
               className="rounded-lg overflow-hidden  h-[515px]"
             >
-              <Card className="group relative overflow-hidden rounded-lg h-[430px]">
+              <Card
+                className="group relative cursor-pointer overflow-hidden rounded-lg h-[430px]"
+                onClick={() => navigate(`/product/${product.id}`)}
+              >
                 <img src={product.image} alt={product.name} />
                 <div className="absolute inset-0 bg-[#c87985]/30 opacity-0 transition duration-500 group-hover:opacity-100"></div>
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -163,16 +171,24 @@ export default function Home() {
               <div className="product-name"> {product.name}</div>
               <div className="product-price">
                 <p>{product.price?.toFixed(0)}vnd</p>
-                <p>
+                <button
+                  type="button"
+                  aria-label={`Thêm ${product.name} vào giỏ hàng`}
+                  className="hover:text-[#E16463]"
+                  onClick={() => {
+                    // Cần chọn phân loại ở trang chi tiết trước khi thêm vào giỏ
+                    if (requireLogin()) navigate(`/product/${product.id}`);
+                  }}
+                >
                   <ShoppingCartOutlined />
-                </p>
+                </button>
               </div>
             </div>
           ))}
         </div>
-        <p className="text-xl text-[#E16463] font-bold cursor-pointer hover:underline">
+        <Link to="/products" className="text-xl !text-[#E16463] font-bold hover:underline">
           Show more <ArrowRightOutlined className="inline-block w-4 h-4 ml-1" />
-        </p>
+        </Link>
       </div>
     </div>
   );

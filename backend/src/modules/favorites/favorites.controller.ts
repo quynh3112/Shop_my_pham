@@ -34,7 +34,7 @@ export class FavoritesController {
     @Param('productId', ParseIntPipe) productId: number,
     @Req() request: AuthenticatedRequest,
   ) {
-    return this.favoritesService.isFavorite(request.user.userId, productId);
+    return this.favoritesService.checkIsFavorited(request.user.userId, productId);
   }
 
   @Get(':id')

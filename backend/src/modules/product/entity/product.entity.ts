@@ -32,6 +32,10 @@ export class Product {
   @Column({ type: 'text' })
   description!: string;
 
+  // File PDF mô tả chi tiết (tuỳ chọn)
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  descriptionPdfUrl!: string | null;
+
   // VND
   @Column()
   price!: number;

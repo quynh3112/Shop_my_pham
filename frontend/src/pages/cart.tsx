@@ -1,6 +1,8 @@
 import { DeleteOutlined, MinusOutlined, PlusOutlined, ShoppingOutlined } from "@ant-design/icons";
-import { Alert, Button, Empty, Spin } from "antd";
+import { Alert, Button, Empty, Spin, message } from "antd";
+import { isAxiosError } from "axios";
 import useCart from "../hooks/useCart";
+import useRequireLogin from "../hooks/useRequireLogin";
 import type { CartItemView } from "../types/cart";
 
 const formatPrice = (value: number) =>
@@ -39,12 +41,30 @@ function CartItem({ item, disabled, onUpdate, onRemove }: {
   );
 }
 
+const getCartError = (error: unknown) => {
+  if (isAxiosError(error)) {
+    const serverMessage = error.response?.data?.message;
+    if (typeof serverMessage === "string") return serverMessage;
+  }
+  return "Không thể cập nhật giỏ hàng.";
+};
+
 export default function Cart() {
   const { cart, loading, error, updateCart, removeItem, clearCart, isMutating } = useCart();
+  const { handleAuthError } = useRequireLogin();
+  const [messageApi, contextHolder] = message.useMessage();
+  const runCartAction = async (action: () => Promise<unknown>) => {
+    try {
+      await action();
+    } catch (actionError) {
+      if (!handleAuthError(actionError)) messageApi.error(getCartError(actionError));
+    }
+  };
   const items = cart?.items ?? [];
 
   return (
     <main className="min-h-[calc(100vh-110px)] bg-[#fffafa] px-5 py-10 sm:px-8 lg:px-16 lg:py-16">
+      {contextHolder}
       <div className="mx-auto max-w-7xl">
         <div className="mb-10 flex items-end justify-between gap-4 border-b border-[#e8caca] pb-6">
           <div><h3 className="text-xl font-medium text-[#2d2020]">Giỏ hàng</h3></div>
@@ -54,8 +74,8 @@ export default function Cart() {
         {loading ? <div className="flex min-h-72 items-center justify-center"><Spin size="large" /></div> : items.length === 0 ? <div className="border border-dashed border-[#e8caca] bg-white px-6 py-20"><Empty description="Giỏ hàng đang trống" /></div> : (
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-16">
             <section className="bg-white px-5 sm:px-8">
-              <div className="flex items-center justify-between border-b border-[#f0d8d8] py-4 text-xs uppercase tracking-[0.18em] text-[#987979]"><span>Sản phẩm</span><button type="button" className="normal-case tracking-normal text-[#b47777] hover:text-[#c64f52] disabled:opacity-40" onClick={() => void clearCart()} disabled={isMutating}>Xóa tất cả</button></div>
-              {items.map((item) => <CartItem key={item.id} item={item} onUpdate={(id, quantity) => void updateCart({ id, quantity })} onRemove={(id) => void removeItem(id)} disabled={isMutating} />)}
+              <div className="flex items-center justify-between border-b border-[#f0d8d8] py-4 text-xs uppercase tracking-[0.18em] text-[#987979]"><span>Sản phẩm</span><button type="button" className="normal-case tracking-normal text-[#b47777] hover:text-[#c64f52] disabled:opacity-40" onClick={() => void runCartAction(() => clearCart())} disabled={isMutating}>Xóa tất cả</button></div>
+              {items.map((item) => <CartItem key={item.id} item={item} onUpdate={(id, quantity) => void runCartAction(() => updateCart({ id, quantity }))} onRemove={(id) => void runCartAction(() => removeItem(id))} disabled={isMutating} />)}
             </section>
             <aside className="h-fit border border-[#e8caca] bg-[#fff4f2] p-6 sm:p-8 lg:sticky lg:top-6">
               <h2 className="font-['Bodoni_72'] text-3xl text-[#2d2020]">Tóm tắt đơn hàng</h2>

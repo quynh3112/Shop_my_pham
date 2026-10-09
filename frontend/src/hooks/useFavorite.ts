@@ -1,5 +1,6 @@
 ﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addFavorite, listMyFavorites, removeMyFavorite } from "../service/favorite.service";
+import { isLoggedIn } from "../utils/auth";
 
 export const favoriteQueryKey = ["favorites"] as const;
 
@@ -18,6 +19,7 @@ export default function useFavorite() {
   const favoritesQuery = useQuery({
     queryKey: favoriteQueryKey,
     queryFn: async () => normalizeFavorites(await listMyFavorites()),
+    enabled: isLoggedIn(),
   });
 
   const refreshFavorites = () => queryClient.invalidateQueries({ queryKey: favoriteQueryKey });
@@ -31,6 +33,9 @@ export default function useFavorite() {
     mutationFn: (productId: number) => removeMyFavorite(productId),
     onSuccess: refreshFavorites,
   });
+  const isFavorite = (productId: number) => {
+    return favoritesQuery.data?.some((favorite) => favorite.productId === productId) ?? false;
+  };
 
   return {
     favorites: favoritesQuery.data ?? [],
@@ -40,5 +45,7 @@ export default function useFavorite() {
     addFavorite: addMutation.mutateAsync,
     removeFavorite: removeMutation.mutateAsync,
     isMutating: addMutation.isPending || removeMutation.isPending,
+    isFavorite,
   };
+
 }

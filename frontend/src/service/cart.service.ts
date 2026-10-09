@@ -24,7 +24,7 @@ return res.data
 }
 export const updateCart=async(itemId:number,quantity:number):Promise<CartView>=>{
 const token=localStorage.getItem('token')
-const res= await api.patch(`${endpoint}/${itemId}`, { quantity },{
+const res= await api.patch(`${endpoint}/items/${itemId}`, { quantity },{
     headers:{
         Authorization:`Bearer ${token}`
     }
@@ -33,7 +33,7 @@ return res.data
 }
 export const removeItem=async(itemId:number)=>{
     const token=localStorage.getItem('token')
-const res= await api.delete(`${endpoint}/${itemId}`,{
+const res= await api.delete(`${endpoint}/items/${itemId}`,{
     headers:{
         Authorization:`Bearer ${token}`
     }

@@ -30,14 +30,17 @@ export const allReviewsInProduct = async (productId: number) => {
 };
 
 export const purchasedProductsNotReviewed = async () => {
-  const res = await api.get(`${endpoint}/my/purchased-not-reviewed`, {
+  const res = await api.get(`${endpoint}/pending-products`, {
     headers: authHeaders(),
   });
   return res.data;
 };
 
-export const updateMyReview = async (productId: number, payload: ReviewCreate) => {
-  const res = await api.put(`${endpoint}/${productId}`, payload, {
+export const updateMyReview = async (
+  reviewId: number,
+  payload: ReviewCreate,
+) => {
+  const res = await api.patch(`${endpoint}/${reviewId}`, payload, {
     headers: authHeaders(),
   });
   return res.data;
@@ -49,5 +52,13 @@ export const removeMyReview = async (reviewId: number) => {
   });
   return res.data;
 };
-
-export const deleteMyReview = async (reviewId: number) => removeMyReview(reviewId);
+export const avgRatingInProduct = async (productId: number) => {
+  const res = await api.get(`${endpoint}/product/${productId}/stats`);
+  return res.data;
+};
+export const reviewsInProduct = async (productId: number) => {
+  const res = await api.get(`${endpoint}/product/${productId}`);
+  return res.data;
+};
+export const deleteMyReview = async (reviewId: number) =>
+  removeMyReview(reviewId);

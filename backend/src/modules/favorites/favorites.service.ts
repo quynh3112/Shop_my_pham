@@ -217,12 +217,23 @@ export class FavoritesService {
     return { deleted: true, productId };
   }
 
-  async isFavorite(userId: number, productId: number): Promise<boolean> {
+  async checkIsFavorited(
+    userId: number,
+    productId: number,
+  ): Promise<{ productId: number; isFavorite: boolean }> {
     const favorite = await this.favoriteRepo.findOne({
       where: { userId, productId },
       select: ['id'],
     });
 
-    return !!favorite;
+    return {
+      productId,
+      isFavorite: !!favorite,
+    };
+  }
+
+  async isFavorite(userId: number, productId: number): Promise<boolean> {
+    const result = await this.checkIsFavorited(userId, productId);
+    return result.isFavorite;
   }
 }

@@ -9,6 +9,7 @@ import { EntityManager, In, Repository } from 'typeorm';
 import { ProductImage } from '../productimage/entity/product_image.entity';
 import { ProductVariant } from '../productvariant/entity/produc_variant.entity';
 import { CategoryService } from '../category/category.service';
+import { Favorite } from '../favorites/entity/favorite.entity';
 import { DataSource } from 'typeorm';
 import { Category } from '../category/entity/category.entity';
 import {
@@ -24,6 +25,7 @@ import { basename, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
 type UploadedImage = { buffer: Buffer };
+type UploadedPdf = { buffer: Buffer; mimetype?: string };
 
 const productImageDirectory = join(process.cwd(), 'uploads', 'products');
 
@@ -39,6 +41,24 @@ async function deleteStoredImage(image: ProductImage) {
   const filename = basename(image.url);
   try {
     await unlink(join(productImageDirectory, filename));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
+}
+
+const productDocumentDirectory = join(process.cwd(), 'uploads', 'documents');
+
+async function storeDescriptionPdf(buffer: Buffer) {
+  await mkdir(productDocumentDirectory, { recursive: true });
+  const filename = `${randomUUID()}.pdf`;
+  await writeFile(join(productDocumentDirectory, filename), buffer);
+  return `/uploads/documents/${filename}`;
+}
+
+async function deleteStoredPdf(url: string | null) {
+  if (!url) return;
+  try {
+    await unlink(join(productDocumentDirectory, basename(url)));
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
   }
@@ -75,6 +95,8 @@ export class ProductService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
+    @InjectRepository(Favorite)
+    private readonly favoriteRepo: Repository<Favorite>,
     @InjectRepository(ProductImage)
     private readonly imgRepo: Repository<ProductImage>,
     @InjectRepository(ProductVariant)
@@ -223,6 +245,7 @@ export class ProductService {
     if (rows.length === 0)
       throw new NotFoundException('Không tìm thấy sản phẩm này.');
   }
+
   async getProductById(id: number) {
     const product = await this.productRepo.findOne({
       where: { id },
@@ -367,7 +390,7 @@ export class ProductService {
     return this.getProductById(id);
   }
   async removeProduct(id: number, adminUserId: number) {
-    const images = await this.dataSource.transaction(async (manager) => {
+    const { images, descriptionPdfUrl } = await this.dataSource.transaction(async (manager) => {
       await this.lockProductRow(manager, id);
       const product = await manager.findOneOrFail(Product, {
         where: { id },
@@ -382,11 +405,14 @@ export class ProductService {
       }
 
       await manager.delete(Product, id);
-      return product.images;
+      return product;
     });
-     await Promise.all(images.map((image) => deleteStoredImage(image)));
+    await Promise.all([
+      ...images.map((image) => deleteStoredImage(image)),
+      deleteStoredPdf(descriptionPdfUrl),
+    ]);
   }
-    async addProductImages(productId: number, files: UploadedImage[]) {
+  async addProductImages(productId: number, files: UploadedImage[]) {
     if (files.length === 0) {
       throw new BadRequestException('Chưa chọn ảnh nào để tải lên.');
     }
@@ -397,22 +423,60 @@ export class ProductService {
     });
     if (!product) throw new NotFoundException('Không tìm thấy sản phẩm này.');
 
-    const startOrder = product.images.reduce((max, img) => Math.max(max, img.sortOrder + 1), 0);
-    const stored = await Promise.all(files.map((file) => storeProductImage(file.buffer)));
+    const startOrder = product.images.reduce(
+      (max, img) => Math.max(max, img.sortOrder + 1),
+      0,
+    );
+    const stored = await Promise.all(
+      files.map((file) => storeProductImage(file.buffer)),
+    );
 
     const rows = stored.map((image, index) =>
       this.imgRepo.create({
         productId,
         url: image.url,
         thumbUrl: image.thumbUrl,
-         sortOrder: startOrder + index,
+        sortOrder: startOrder + index,
       }),
     );
     await this.imgRepo.save(rows);
 
     return this.getProductById(productId);
   }
-   async removeProductImage(imageId: number) {
+  async setDescriptionPdf(productId: number, file?: UploadedPdf) {
+    if (!file) throw new BadRequestException('Chưa chọn file PDF.');
+    const isPdf =
+      file.mimetype === 'application/pdf' &&
+      file.buffer.subarray(0, 5).toString('latin1') === '%PDF-';
+    if (!isPdf) throw new BadRequestException('Chỉ chấp nhận file PDF.');
+
+    const product = await this.productRepo.findOne({
+      where: { id: productId },
+      select: ['id', 'descriptionPdfUrl'],
+    });
+    if (!product) throw new NotFoundException('Không tìm thấy sản phẩm này.');
+
+    const url = await storeDescriptionPdf(file.buffer);
+    await this.productRepo.update(productId, { descriptionPdfUrl: url });
+    await deleteStoredPdf(product.descriptionPdfUrl);
+
+    return this.getProductById(productId);
+  }
+
+  async removeDescriptionPdf(productId: number) {
+    const product = await this.productRepo.findOne({
+      where: { id: productId },
+      select: ['id', 'descriptionPdfUrl'],
+    });
+    if (!product) throw new NotFoundException('Không tìm thấy sản phẩm này.');
+
+    await this.productRepo.update(productId, { descriptionPdfUrl: null });
+    await deleteStoredPdf(product.descriptionPdfUrl);
+
+    return this.getProductById(productId);
+  }
+
+  async removeProductImage(imageId: number) {
     const image = await this.imgRepo.findOne({ where: { id: imageId } });
     if (!image) throw new NotFoundException('Không tìm thấy ảnh này.');
 

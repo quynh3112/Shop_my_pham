@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addCart, clearCart, getCart, removeItem, updateCart } from "../service/cart.service";
+import { isLoggedIn } from "../utils/auth";
 
 export const cartQueryKey = ["carts"] as const;
 
@@ -8,6 +9,7 @@ export default function useCart() {
     const cartsQuery = useQuery({
         queryKey: cartQueryKey,
         queryFn: getCart,
+        enabled: isLoggedIn(),
     });
 
     const refreshCarts = () => queryClient.invalidateQueries({ queryKey: cartQueryKey });

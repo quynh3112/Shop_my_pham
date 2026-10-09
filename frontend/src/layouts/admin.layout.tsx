@@ -1,15 +1,18 @@
 import { Button, Layout, Menu, theme } from 'antd';
 import React, { useState } from 'react';
 import {
+  AppstoreOutlined,
+  HomeOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  UploadOutlined,
-  UserOutlined,
-  VideoCameraOutlined,
+  PictureOutlined,
 } from '@ant-design/icons';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 const { Header, Sider, Content } = Layout;
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({ children }: { children?: React.ReactNode }) {
     const [collapsed, setCollapsed] = useState(false);
+    const navigate = useNavigate();
+    const location = useLocation();
     const {
         token: { colorBgContainer },
       } = theme.useToken();
@@ -20,23 +23,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <Menu
           theme="dark"
           mode="inline"
-            defaultSelectedKeys={['1']}
+            selectedKeys={[location.pathname]}
+            onClick={({ key }) => navigate(key)}
             items={[
                 {
-                key: '1',
-                icon: <UserOutlined />,
-                label: 'nav 1',
+                key: '/admin/products',
+                icon: <AppstoreOutlined />,
+                label: 'Sản phẩm',
               },
               {
-                key: '2',
-                icon: <VideoCameraOutlined />,
-                label: 'nav 2',
+                key: '/admin/banners',
+                icon: <PictureOutlined />,
+                label: 'Banner',
               },
                 {
 
-                key: '3',
-              icon: <UploadOutlined />,
-              label: 'nav 3',
+                key: '/',
+              icon: <HomeOutlined />,
+              label: 'Về cửa hàng',
                 }
             ]}/>
 
@@ -60,7 +64,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     background: colorBgContainer,
                 }}
             >
-                {children}
+                {children ?? <Outlet />}
             </Content>
         </Layout>
     </Layout>

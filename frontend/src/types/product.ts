@@ -11,6 +11,7 @@ export interface ProductItem {
     id?: number
     name: string
     description?: string | null
+    descriptionPdfUrl?: string | null
     price?: number
     categoryId?: number
     isActive?: boolean
@@ -24,9 +25,18 @@ export interface ProductItem {
         slug?: string
         parentId?: number | null
     }
-    variants?: ProductVariantCreate[]
+    variants?: ProductVariantItem[]
     createdAt?: string
     updatedAt?: string
+}
+
+export interface ProductVariantItem {
+    id?: number
+    variantId?: number
+    name: string
+    size: string
+    stock?: number
+    initialStock: number
 }
 
 export interface ProductVariantCreate{
@@ -67,4 +77,3 @@ export type ProductUpdateVariantInput =
   | { id: number; size: string; name: string }
   | { size: string; name: string; initialStock: number };
   
-

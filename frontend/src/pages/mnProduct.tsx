@@ -5,6 +5,19 @@ import { useEffect, useState } from "react"
 import CreateProduct from "../component/createproduct"
 import useCategory from "../hooks/useCategory"
 import type { ProductCreate } from "../types/product"
+import type { UploadFile } from "antd"
+import { removeDescriptionPdf, uploadDescriptionPdf } from "../service/product.service"
+import { isAxiosError } from "axios"
+
+const getActionError = (error: unknown, fallback: string) => {
+  if (isAxiosError(error)) {
+    if (error.response?.status === 401) return "Vui lòng đăng nhập lại."
+    if (error.response?.status === 403) return "Chỉ admin mới được thực hiện thao tác này."
+    const serverMessage = error.response?.data?.message
+    if (typeof serverMessage === "string") return serverMessage
+  }
+  return fallback
+}
 import type { Category } from "../types/category"
 import { DeleteOutlined, EditOutlined, Loading3QuartersOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
 
@@ -28,13 +41,31 @@ export default function MnProduct(){
         fetchCategory()
       fetchProducts({ page: 1, limit: 100 })
     },[])
-    const handleProduct=async(values:ProductCreate)=>{
-        if (editingProduct?.id !== undefined) {
-          await editProduct(editingProduct.id, values)
-          message.success("Đã cập nhật sản phẩm")
-        } else {
-          await submitProduct({ ...values, isActive: values.isActive ?? true })
-          message.success("Đã thêm sản phẩm")
+    const handleProduct=async(formValues:ProductCreate & { descriptionPdf?: UploadFile[]; removeDescriptionPdf?: boolean })=>{
+        const { descriptionPdf, removeDescriptionPdf: shouldRemovePdf, ...values } = formValues
+        const pdfFile = descriptionPdf?.[0]?.originFileObj
+        let productId = editingProduct?.id
+        try {
+          if (productId !== undefined) {
+            await editProduct(productId, values)
+            message.success("Đã cập nhật sản phẩm")
+          } else {
+            const created = await submitProduct({ ...values, isActive: values.isActive ?? true })
+            productId = created?.id
+            message.success("Đã thêm sản phẩm")
+          }
+        } catch (error) {
+          message.error(getActionError(error, "Không thể lưu sản phẩm."))
+          return
+        }
+        if (productId !== undefined && (pdfFile || shouldRemovePdf)) {
+          try {
+            if (pdfFile) await uploadDescriptionPdf(productId, pdfFile)
+            else await removeDescriptionPdf(productId)
+            await fetchProducts({ page: 1, limit: 100 })
+          } catch (error) {
+            message.error(getActionError(error, "Lưu sản phẩm thành công nhưng không cập nhật được file PDF."))
+          }
         }
         handleClose()
     }
@@ -52,8 +83,12 @@ export default function MnProduct(){
     }
     const handleDelete = async (productId?: number) => {
       if (productId === undefined) return
-      await deleteProduct(productId)
-      message.success("Đã xóa sản phẩm")
+      try {
+        await deleteProduct(productId)
+        message.success("Đã xóa sản phẩm")
+      } catch (error) {
+        message.error(getActionError(error, "Không thể xóa sản phẩm."))
+      }
     }
    if (loading)
     return (
@@ -172,7 +207,7 @@ function handleCategoryChange(categoryId: number) {
         <div>
             <Button type="primary" icon={<PlusOutlined />} onClick={()=>{ setEditingProduct(null); form.resetFields(); setOpen(true) }}>Thêm sản phẩm</Button>
             <Dialog title={editingProduct ? "Sửa sản phẩm" : "Thêm sản phẩm"} open={open} onCancel={handleClose} onClose={handleClose} onSubmit={() => form.submit()} >
-                <CreateProduct form={form} categories={categories} handleSubmit={handleProduct} handleCategoryChange={handleCategoryChange}/>
+                <CreateProduct form={form} categories={categories} handleSubmit={handleProduct} handleCategoryChange={handleCategoryChange} existingPdfUrl={editingProduct?.descriptionPdfUrl}/>
 
             </Dialog>
             <Space wrap style={{ margin: "24px 0 16px" }}>

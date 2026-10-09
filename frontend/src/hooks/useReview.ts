@@ -1,5 +1,11 @@
 ﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { addReview, listMyReviews, deleteMyReview, updateMyReview } from "../service/review.service";
+import {
+  addReview,
+  deleteMyReview,
+  listMyReviews,
+  reviewsInProduct,
+  updateMyReview,
+} from "../service/review.service";
 import type { ReviewCreate } from "../types/review";
 
 export const reviewQueryKey = ["reviews"] as const;
@@ -13,24 +19,31 @@ const normalizeReviews = (payload: unknown) => {
   return Array.isArray(nested) ? nested : [];
 };
 
-export default function useReview() {
+export default function useReview(productId?: number) {
   const queryClient = useQueryClient();
+  const validProductId = productId !== undefined && Number.isInteger(productId) && productId > 0 ? productId : undefined;
 
   const reviewsQuery = useQuery({
-    queryKey: reviewQueryKey,
-    queryFn: async () => normalizeReviews(await listMyReviews()),
+    queryKey: validProductId ? (["reviews", validProductId] as const) : reviewQueryKey,
+    queryFn: async () => {
+      const payload = validProductId
+        ? await reviewsInProduct(validProductId)
+        : await listMyReviews();
+
+      return normalizeReviews(payload);
+    },
   });
 
-  const refreshReviews = () => queryClient.invalidateQueries({ queryKey: reviewQueryKey });
+  const refreshReviews = () => queryClient.invalidateQueries({ queryKey: ["reviews"] });
 
   const addMutation = useMutation({
-    mutationFn: addReview,
+    mutationFn: (payload: ReviewCreate) => addReview(payload),
     onSuccess: refreshReviews,
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ productId, payload }: { productId: number; payload: ReviewCreate }) =>
-      updateMyReview(productId, payload),
+    mutationFn: ({ reviewId, payload }: { reviewId: number; payload: ReviewCreate }) =>
+      updateMyReview(reviewId, payload),
     onSuccess: refreshReviews,
   });
 
@@ -47,6 +60,7 @@ export default function useReview() {
     reviewsQuery,
     addMutation,
     addReview: addMutation.mutateAsync,
+    createReview: addMutation.mutateAsync,
     updateMutation,
     updateReview: updateMutation.mutateAsync,
     deleteMutation,

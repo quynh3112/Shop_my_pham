@@ -13,6 +13,18 @@ import { OrderItem } from '../order_item/entity/order-item.entity';
 import { Order, PaymentStatus } from '../order/entity/order.entity';
 import { OrderStatus } from 'src/until/order_status';
 
+// Only expose public user fields; never leak passwordHash/email on public endpoints.
+const PUBLIC_REVIEW_SELECT = {
+  id: true,
+  userId: true,
+  productId: true,
+  rating: true,
+  comment: true,
+  createdAt: true,
+  updatedAt: true,
+  user: { id: true, fullName: true, avatarUrl: true },
+} as const;
+
 @Injectable()
 export class ReviewsService {
   constructor(
@@ -35,6 +47,39 @@ export class ReviewsService {
     });
   }
 
+  async getProductRatingStats(productId: number): Promise<{
+    productId: number;
+    averageRating: number;
+    reviewCount: number;
+  }> {
+    const product = await this.productRepo.findOne({
+      where: { id: productId },
+      select: { id: true },
+    });
+
+    if (!product) {
+      throw new NotFoundException('Không tìm thấy sản phẩm.');
+    }
+
+    const stats = await this.reviewRepo
+      .createQueryBuilder('review')
+      .select('AVG(review.rating)', 'averageRating')
+      .addSelect('COUNT(review.id)', 'reviewCount')
+      .where('review.productId = :productId', { productId })
+      .getRawOne<{ averageRating: string | null; reviewCount: string }>();
+
+    const averageRating = stats?.averageRating
+      ? Number(Number(stats.averageRating).toFixed(1))
+      : 0;
+    const reviewCount = Number(stats?.reviewCount ?? 0);
+
+    return {
+      productId,
+      averageRating,
+      reviewCount,
+    };
+  }
+
   async findByProductId(productId: number): Promise<Review[]> {
     const product = await this.productRepo.findOne({
       where: { id: productId },
@@ -47,6 +92,7 @@ export class ReviewsService {
     return this.reviewRepo.find({
       where: { productId },
       relations: ['user'],
+      select: PUBLIC_REVIEW_SELECT,
       order: { createdAt: 'DESC' },
     });
   }
@@ -77,7 +123,8 @@ export class ReviewsService {
   async findById(id: number): Promise<Review> {
     const review = await this.reviewRepo.findOne({
       where: { id },
-      relations: ['user', 'product'],
+      relations: ['user'],
+      select: PUBLIC_REVIEW_SELECT,
     });
 
     if (!review) {

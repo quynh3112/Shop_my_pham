@@ -5,11 +5,15 @@ import {
   Input,
   InputNumber,
   Space,
+  Upload,
+  message,
   type FormInstance,
+  type UploadFile,
 } from "antd";
 import type { Category } from "../types/category";
 import TextArea from "antd/es/input/TextArea";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import { DeleteOutlined, FilePdfOutlined, PlusOutlined, UploadOutlined } from "@ant-design/icons";
+import { toFileUrl } from "../service/product.service";
 import { useState } from "react";
 
 interface Props {
@@ -17,7 +21,10 @@ interface Props {
   form: FormInstance;
   categories: Category[];
   handleCategoryChange: (categoryId:number) => void;
+  existingPdfUrl?: string | null;
 }
+
+const MAX_PDF_SIZE = 10 * 1024 * 1024;
 
 type CategoryOption = {
   value: number;
@@ -39,7 +46,11 @@ export default function CreateProduct({
   form,
   categories,
   handleCategoryChange,
+  existingPdfUrl,
 }: Props) {
+  const pdfFiles: UploadFile[] = Form.useWatch("descriptionPdf", form) ?? [];
+  const removePdf: boolean = Form.useWatch("removeDescriptionPdf", form) ?? false;
+  const showExistingPdf = Boolean(existingPdfUrl) && !removePdf && pdfFiles.length === 0;
   const categoryOptions = buildCategoryOptions(categories);
   const [categoryPath, setCategoryPath] = useState<number[]>([]);
 
@@ -49,7 +60,54 @@ export default function CreateProduct({
         <Input placeholder="Tên sản phẩm" />
       </Form.Item>
       <Form.Item name="description">
-        <TextArea placeholder="Mô tả sản phẩm" />
+        <TextArea placeholder="Mô tả sản phẩm" autoSize={{ minRows: 4, maxRows: 12 }} />
+      </Form.Item>
+      <Form.Item label="Tài liệu mô tả (PDF, tối đa 10MB)">
+        {showExistingPdf && existingPdfUrl && (
+          <Space className="mb-2">
+            <a href={toFileUrl(existingPdfUrl)} target="_blank" rel="noopener noreferrer">
+              <FilePdfOutlined /> PDF hiện tại
+            </a>
+            <Button
+              danger
+              type="text"
+              size="small"
+              icon={<DeleteOutlined />}
+              onClick={() => form.setFieldValue("removeDescriptionPdf", true)}
+            >
+              Xóa PDF
+            </Button>
+          </Space>
+        )}
+        <Form.Item
+          name="descriptionPdf"
+          valuePropName="fileList"
+          getValueFromEvent={(event: { fileList: UploadFile[] }) => event.fileList.slice(-1)}
+          noStyle
+        >
+          <Upload
+            accept="application/pdf,.pdf"
+            maxCount={1}
+            beforeUpload={(file) => {
+              if (file.type !== "application/pdf") {
+                message.error("Chỉ chấp nhận file PDF.");
+                return Upload.LIST_IGNORE;
+              }
+              if (file.size > MAX_PDF_SIZE) {
+                message.error("File PDF tối đa 10MB.");
+                return Upload.LIST_IGNORE;
+              }
+              return false;
+            }}
+          >
+            <Button icon={<UploadOutlined />}>
+              {existingPdfUrl && !removePdf ? "Thay file PDF" : "Chọn file PDF"}
+            </Button>
+          </Upload>
+        </Form.Item>
+      </Form.Item>
+      <Form.Item name="removeDescriptionPdf" hidden>
+        <Input />
       </Form.Item>
       <Form.Item name="price">
         <Input min={0} type={"number"} placeholder="Giá sản phẩm" />

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Card, Input, InputNumber, Select, Spin, Tag } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 import { getProducts } from "../service/product.service";
 import useCategory from "../hooks/useCategory";
 import type { ProductItem, ProductQuery } from "../types/product";
@@ -44,6 +45,7 @@ const defaultQuery = (query?: ProductQuery): ProductQuery => ({
 });
 
 export default function Products({ query }: Props) {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<ProductQuery>(() => defaultQuery(query));
   const [appliedQuery, setAppliedQuery] = useState<ProductQuery>(() => defaultQuery(query));
   const { categories, fetchCategory, loading: categoryLoading, error: categoryError } = useCategory();
@@ -252,6 +254,7 @@ export default function Products({ query }: Props) {
                 <Card
                   key={product.id ?? product.name}
                   hoverable
+                  onClick={() => product.id !== undefined && navigate(`/product/${product.id}`)}
                   cover={
                     <img
                       alt={product.name}
