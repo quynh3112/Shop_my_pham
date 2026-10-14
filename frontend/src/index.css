@@ -142,3 +142,38 @@ h2{
     animation: none;
   }
 }
+
+/* Lắc nhẹ để gây chú ý (vd. nút "Shop Now"): lắc ~0.6s rồi nghỉ, lặp mỗi 3s */
+@keyframes attention-wiggle {
+  0%, 80%, 100% {
+    transform: rotate(0deg);
+  }
+  84% {
+    transform: rotate(-4deg) scale(1.04);
+  }
+  88% {
+    transform: rotate(4deg) scale(1.04);
+  }
+  92% {
+    transform: rotate(-3deg) scale(1.02);
+  }
+  96% {
+    transform: rotate(2deg);
+  }
+}
+.attention-wiggle {
+  display: inline-block;
+  animation: attention-wiggle 3s ease-in-out infinite;
+  transform-origin: center;
+}
+/* Rê chuột / focus thì đứng yên cho dễ bấm */
+.attention-wiggle:hover,
+.attention-wiggle:focus-visible {
+  animation-play-state: paused;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .attention-wiggle {
+    animation: none;
+  }
+}

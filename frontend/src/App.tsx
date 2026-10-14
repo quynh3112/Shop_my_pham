@@ -1,7 +1,7 @@
 import './App.css'
 import { Button, Result } from 'antd'
 import { BrowserRouter, Link, Route, Routes, useParams, useSearchParams } from 'react-router-dom'
-import MainLayout from './component/mainLayout'
+import MainLayout from './pages/mainLayout'
 import RequireAuth from './component/requireAuth'
 import AdminLayout, { AdminHome } from './layouts/admin.layout'
 import RequirePermission from './component/requirePermission'
