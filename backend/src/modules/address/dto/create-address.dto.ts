@@ -5,6 +5,7 @@ import {
   IsBoolean,
   MinLength,
   MaxLength,
+  Matches,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -15,9 +16,10 @@ export class AddressCreateDto {
   @MaxLength(120)
   fullName!: string;
 
+  @Transform(({ value }) => (typeof value === 'string' ? value.replace(/\D/g, '') : value))
   @IsString()
   @IsNotEmpty({ message: 'Vui lòng nhập số điện thoại' })
-  // Thêm @Matches(...) hoặc custom validator cho định dạng SĐT Việt Nam
+  @Matches(/^0\d{9}$/, { message: 'Số điện thoại gồm 10 chữ số và bắt đầu bằng 0.' })
   phone!: string;
 
   @Transform(({ value }) => value?.trim())

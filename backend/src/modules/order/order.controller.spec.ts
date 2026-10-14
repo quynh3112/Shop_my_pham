@@ -1,4 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { OrderStatus } from 'src/until/order_status';
+import { Role } from '../user/entity/user.entity';
+import { PaymentStatus } from './entity/order.entity';
 import { OrderController } from './order.controller';
 import { OrderService } from './order.service';
 
@@ -45,10 +48,15 @@ describe('OrderController', () => {
   });
 
   it('routes customer requests to their order service methods', () => {
-    const request = { user: { userId: 12 } };
+    const request = { user: { userId: 12, role: Role.USER } };
     const query = { page: 1, limit: 10 };
-    const createInput = { addressId: 4 };
-    const buyNowInput = { addressId: 4, variantId: 6, quantity: 2 };
+    const createInput = { addressId: 4, paymentMethod: 'COD' as const };
+    const buyNowInput = {
+      addressId: 4,
+      variantId: 6,
+      quantity: 2,
+      paymentMethod: 'COD' as const,
+    };
 
     controller.createOrder(createInput, request);
     controller.buyNow(buyNowInput, request);
@@ -64,10 +72,10 @@ describe('OrderController', () => {
   });
 
   it('routes admin requests to their order service methods', () => {
-    const request = { user: { userId: 2 } };
+    const request = { user: { userId: 2, role: Role.ADMIN } };
     const query = { page: 1, limit: 10 };
-    const statusInput = { status: 'CONFIRMED' as const };
-    const paymentInput = { paymentStatus: 'PAID' as const };
+    const statusInput = { status: OrderStatus.CONFIRMED };
+    const paymentInput = { paymentStatus: PaymentStatus.PAID };
 
     controller.listAllOrders(query);
     controller.getOrderByCode('DH20260101-00001');

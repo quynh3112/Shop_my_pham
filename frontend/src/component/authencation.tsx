@@ -13,10 +13,10 @@ import {
   Modal,
   message,
   type FormRule,
-  type ThemeConfig,
 } from "antd";
 import { useEffect, useState, type ReactNode } from "react";
 import useAuth from "../hooks/useAuth";
+import { authTheme } from "../config/theme";
 import type { Login, OtpSent, Register, User } from "../types/user";
 
 interface Props {
@@ -38,40 +38,6 @@ type View =
 
 type RegisterValues = Register & { confirmPassword: string };
 
-const BRAND = "#e16463";
-
-// Theme riêng cho modal: hồng thương hiệu, input bo tròn và cao hơn mặc định
-const authTheme: ThemeConfig = {
-  token: {
-    colorPrimary: BRAND,
-    colorPrimaryHover: "#c95050",
-    colorPrimaryActive: "#b84444",
-    colorLink: BRAND,
-    borderRadius: 12,
-    controlHeight: 44,
-    fontFamily: "'Inter', system-ui, 'Segoe UI', Roboto, sans-serif",
-  },
-  components: {
-    Input: {
-      hoverBorderColor: "#e88f98",
-      activeBorderColor: BRAND,
-      activeShadow: "0 0 0 3px rgba(225, 100, 99, 0.12)",
-    },
-    Button: {
-      primaryShadow: "none",
-      fontWeight: 600,
-      controlHeight: 48,
-      borderRadius: 999,
-      contentFontSize: 15,
-    },
-    Form: {
-      labelColor: "#6b5b5e",
-      labelFontSize: 13,
-      verticalLabelPadding: "0 0 6px",
-      itemMarginBottom: 16,
-    },
-  },
-};
 
 // Ảnh khung vòm bên trái, đổi theo tab
 const SIDE_IMAGES: Record<Tab, string> = {
@@ -439,6 +405,7 @@ function AuthContent({ onLoginSuccess }: Pick<Props, "onLoginSuccess">) {
                 <Form.Item
                   name="phone"
                   label="Số điện thoại"
+                  normalize={(value?: string) => value?.replace(/\D/g, "")}
                   rules={[
                     { required: true, message: "Vui lòng nhập số điện thoại" },
                     { pattern: /^0\d{9}$/, message: "Gồm 10 số, bắt đầu bằng 0" },
@@ -456,6 +423,7 @@ function AuthContent({ onLoginSuccess }: Pick<Props, "onLoginSuccess">) {
               <Form.Item
                 name="email"
                 label="Email"
+                normalize={(value?: string) => value?.trim()}
                 rules={[
                   { required: true, message: "Vui lòng nhập email" },
                   { type: "email", message: "Email không hợp lệ" },

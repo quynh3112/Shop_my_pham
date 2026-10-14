@@ -1,19 +1,17 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Input, InputNumber, Select, Spin, Tag } from "antd";
-import { SearchOutlined } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { Spin } from "antd";
 import { getProducts } from "../service/product.service";
+import ProductCard from "../component/productCard";
+import ProductFilter from "../component/product/filter/productFilter";
+import ProductSortBar from "../component/product/productSortBar";
 import useCategory from "../hooks/useCategory";
+import { isLoggedIn } from "../utils/auth";
 import type { ProductItem, ProductQuery } from "../types/product";
-import type { Category } from "../types/category";
 
 interface Props {
   query?: ProductQuery;
 }
-
-const flattenCategories = (items: Category[]): Category[] =>
-  items.flatMap((item) => [item, ...flattenCategories(item.children ?? [])]);
 
 const normalizeProducts = (payload: unknown): ProductItem[] => {
   if (Array.isArray(payload)) return payload as ProductItem[];
@@ -39,13 +37,13 @@ const normalizeProducts = (payload: unknown): ProductItem[] => {
 
 const defaultQuery = (query?: ProductQuery): ProductQuery => ({
   ...query,
-  sort: query?.sort ?? "newest",
+  // "Liên quan" chỉ có nghĩa khi đang tìm từ khoá; không tìm thì xem hàng mới
+  sort: query?.sort ?? (query?.search ? "relevance" : "newest"),
   page: query?.page ?? 1,
   limit: query?.limit ?? 20,
 });
 
 export default function Products({ query }: Props) {
-  const navigate = useNavigate();
   const [filters, setFilters] = useState<ProductQuery>(() => defaultQuery(query));
   const [appliedQuery, setAppliedQuery] = useState<ProductQuery>(() => defaultQuery(query));
   const { categories, fetchCategory, loading: categoryLoading, error: categoryError } = useCategory();
@@ -53,32 +51,38 @@ export default function Products({ query }: Props) {
   const productsQuery = useQuery({
     queryKey: ["products", appliedQuery],
     queryFn: async () => normalizeProducts(await getProducts(appliedQuery)),
+    // Đổi sắp xếp / bộ lọc vẫn giữ danh sách cũ trong lúc tải, không nháy cả trang
+    placeholderData: keepPreviousData,
   });
 
   useEffect(() => {
     void fetchCategory();
   }, []);
 
-  const categoryOptions = useMemo(
-    () =>
-      flattenCategories(categories).map((category) => ({
-        label: category.name,
-        value: category.id,
-      })),
-    [categories],
-  );
-
-  const updateFilter = <K extends keyof ProductQuery>(key: K, value: ProductQuery[K]) => {
-    setFilters((current) => ({ ...current, [key]: value }));
+  const applyFilters = () => {
+    // Bỏ các điều kiện rỗng trước khi gửi lên API
+    const nextQuery = Object.fromEntries(
+      Object.entries(filters).filter(
+        ([, value]) =>
+          value !== undefined && value !== "" && value !== false && !(Array.isArray(value) && value.length === 0),
+      ),
+    ) as ProductQuery;
+    const hasSearch = Boolean(nextQuery.search?.trim());
+    const isNewSearch = hasSearch && nextQuery.search !== appliedQuery.search;
+    // Tìm từ khoá mới -> xếp theo độ liên quan; bỏ từ khoá mà đang "Liên quan" -> về "Mới nhất"
+    const sort: ProductQuery["sort"] = isNewSearch
+      ? "relevance"
+      : !hasSearch && nextQuery.sort === "relevance"
+        ? "newest"
+        : nextQuery.sort;
+    setAppliedQuery({ ...nextQuery, sort, page: 1, limit: filters.limit ?? 20 });
+    setFilters((current) => ({ ...current, sort, page: 1 }));
   };
 
-  const applyFilters = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const nextQuery = Object.fromEntries(
-      Object.entries(filters).filter(([, value]) => value !== undefined && value !== ""),
-    ) as ProductQuery;
-    setAppliedQuery({ ...nextQuery, page: 1, limit: filters.limit ?? 20 });
-    setFilters((current) => ({ ...current, page: 1 }));
+  // Nút sắp xếp nhanh: áp dụng ngay, đồng bộ với ô "Sắp xếp" trong bộ lọc
+  const changeSort = (sort: NonNullable<ProductQuery["sort"]>) => {
+    setFilters((current) => ({ ...current, sort, page: 1 }));
+    setAppliedQuery((current) => ({ ...current, sort, page: 1 }));
   };
 
   const resetFilters = () => {
@@ -112,134 +116,30 @@ export default function Products({ query }: Props) {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <div className="flex flex-col gap-6 lg:flex-row">
-        <aside className="w-full rounded-2xl border border-[#f3d5d7] bg-white p-5 shadow-sm lg:w-[300px] lg:shrink-0">
-          <div className="mb-5 flex items-center justify-between">
-            <h3 className="text-xl font-semibold text-[#3d2a2a]">Bộ lọc sản phẩm</h3>
-            <Button type="link" onClick={resetFilters} className="p-0 text-[#d9797d]">
-              Xóa lọc
-            </Button>
-          </div>
-
-          <form onSubmit={applyFilters} className="space-y-5">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Tìm kiếm
-              </label>
-              <Input
-                allowClear
-                size="large"
-                placeholder="Tên hoặc mô tả"
-                prefix={<SearchOutlined className="text-gray-400" />}
-                value={filters.search}
-                onChange={(event) => updateFilter("search", event.target.value || undefined)}
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Thể loại
-              </label>
-              <Select
-                allowClear
-                size="large"
-                style={{ width: "100%" }}
-                placeholder="Chọn thể loại"
-                options={categoryOptions}
-                value={filters.categoryId}
-                onChange={(value) => updateFilter("categoryId", value)}
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Khoảng giá
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <InputNumber
-                  min={0}
-                  size="large"
-                  style={{ width: "100%" }}
-                  placeholder="Từ"
-                  value={filters.minPrice}
-                  onChange={(value) => updateFilter("minPrice", value ?? undefined)}
-                />
-                <InputNumber
-                  min={0}
-                  size="large"
-                  style={{ width: "100%" }}
-                  placeholder="Đến"
-                  value={filters.maxPrice}
-                  onChange={(value) => updateFilter("maxPrice", value ?? undefined)}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Kích cỡ biến thể
-              </label>
-              <Input
-                allowClear
-                size="large"
-                placeholder="VD: 50ml, M"
-                value={filters.variantSize}
-                onChange={(event) => updateFilter("variantSize", event.target.value || undefined)}
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Size
-              </label>
-              <Input
-                allowClear
-                size="large"
-                placeholder="Nhập size"
-                value={filters.size}
-                onChange={(event) => updateFilter("size", event.target.value || undefined)}
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Sắp xếp
-              </label>
-              <Select
-                size="large"
-                style={{ width: "100%" }}
-                value={filters.sort}
-                options={[
-                  { value: "newest", label: "Mới nhất" },
-                  { value: "price-asc", label: "Giá tăng dần" },
-                  { value: "price-desc", label: "Giá giảm dần" },
-                  { value: "name", label: "Tên sản phẩm" },
-                ]}
-                onChange={(value: ProductQuery["sort"]) => updateFilter("sort", value)}
-              />
-            </div>
-
-            
-
-            <Button
-              htmlType="submit"
-              type="primary"
-              block
-              loading={productsQuery.isFetching}
-              className="border-[#d9797d] bg-[#d9797d] hover:!border-[#c8676b] hover:!bg-[#c8676b]"
-            >
-              Tìm sản phẩm
-            </Button>
-          </form>
-        </aside>
+        <ProductFilter
+          value={filters}
+          onChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
+          onApply={applyFilters}
+          onReset={resetFilters}
+          categories={categories}
+          applying={productsQuery.isFetching}
+        />
 
         <main className="min-w-0 flex-1">
-          <div className="mb-5 flex items-center justify-between">
+          <div className="mb-5 flex flex-col gap-4">
             <div>
               <h2 className="text-3xl font-bold text-[#3d2a2a]">Danh sách sản phẩm</h2>
               <p className="text-sm text-gray-500">
                 Hiển thị {products.length} sản phẩm
               </p>
             </div>
+            <ProductSortBar
+              value={appliedQuery.sort}
+              onChange={changeSort}
+              hasSearch={Boolean(appliedQuery.search)}
+              loggedIn={isLoggedIn()}
+              disabled={productsQuery.isFetching}
+            />
           </div>
 
           {products.length === 0 ? (
@@ -249,42 +149,18 @@ export default function Products({ query }: Props) {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 md:gap-x-6">
               {products.map((product: ProductItem) => (
-                <Card
-                  key={product.id ?? product.name}
-                  hoverable
-                  onClick={() => product.id !== undefined && navigate(`/product/${product.id}`)}
-                  cover={
-                    <img
-                      alt={product.name}
-                      src={
-                        product.image ??
-                        "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80"
-                      }
-                      className="h-60 w-full object-cover"
-                    />
-                  }
-                >
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <Tag color={product.isActive ? "green" : "default"}>
-                      {product.isActive ? "Đang bán" : "Ngừng bán"}
-                    </Tag>
-                    <span className="text-xs text-gray-400">
-                      {product.category?.name ?? `Danh mục ${product.categoryId ?? ""}`}
-                    </span>
-                  </div>
-
-                  <h3 className="mb-2 line-clamp-2 min-h-[48px] text-lg font-semibold text-[#3d2a2a]">
-                    {product.name}
-                  </h3>
-                  <p className="mb-3 line-clamp-2 text-sm text-gray-500">
-                    {product.description || "Chưa có mô tả cho sản phẩm này."}
-                  </p>
-                  <p className="text-xl font-bold text-[#d9797d]">
-                    {Number(product.price ?? 0).toLocaleString("vi-VN")}đ
-                  </p>
-                </Card>
+                <div key={product.id ?? product.name} className="flex flex-col gap-2">
+                  <ProductCard product={product} />
+                  {/* "Dành cho bạn": vì sao sản phẩm được gợi ý */}
+                  {appliedQuery.sort === "for-you" && product.recommendReasons?.length ? (
+                    <p className="px-1 text-xs leading-5 text-[#8f6060]">
+                      <span className="font-medium">Gợi ý vì: </span>
+                      {product.recommendReasons.join(" · ")}
+                    </p>
+                  ) : null}
+                </div>
               ))}
             </div>
           )}

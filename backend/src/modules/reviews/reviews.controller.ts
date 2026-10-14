@@ -32,6 +32,16 @@ export class ReviewsController {
     return this.reviewsService.getProductRatingStats(productId);
   }
 
+  /** Người đang xem có được viết đánh giá không + đánh giá của chính họ (nếu có) */
+  @Get('product/:productId/me')
+  @UseGuards(JwtAuthGuard)
+  getMyReviewStatus(
+    @Param('productId', ParseIntPipe) productId: number,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.reviewsService.getMyReviewStatus(request.user.userId, productId);
+  }
+
   @Get('pending-products')
   @UseGuards(JwtAuthGuard)
   findPurchasedProductsNotReviewed(@Req() request: AuthenticatedRequest) {

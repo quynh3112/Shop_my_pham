@@ -36,6 +36,13 @@ export class Product {
   @Column({ type: 'varchar', length: 500, nullable: true })
   descriptionPdfUrl!: string | null;
 
+  // Nhãn dùng cho phân tích da: loại da phù hợp + vấn đề da xử lý được (mã trong skin.constants.ts)
+  @Column({ type: 'text', array: true, default: () => "'{}'" })
+  skinTypes!: string[];
+
+  @Column({ type: 'text', array: true, default: () => "'{}'" })
+  concerns!: string[];
+
   // VND
   @Column()
   price!: number;

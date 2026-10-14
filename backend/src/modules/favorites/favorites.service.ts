@@ -96,10 +96,11 @@ export class FavoritesService {
   }
 
   async findAllByUser(userId: number): Promise<FavoriteWithProductStats[]> {
+    // Kèm ảnh + danh mục để trang "Sản phẩm yêu thích" hiển thị được thẻ sản phẩm
     const favorites = await this.favoriteRepo.find({
       where: { userId },
-      relations: ['product'],
-      order: { createdAt: 'DESC' },
+      relations: ['product', 'product.images', 'product.category'],
+      order: { createdAt: 'DESC', product: { images: { sortOrder: 'ASC' } } },
     });
 
     return this.attachProductRatings(favorites);

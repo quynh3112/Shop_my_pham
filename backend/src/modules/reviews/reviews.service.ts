@@ -134,8 +134,9 @@ export class ReviewsService {
     return review;
   }
 
-  private async assertUserCanReviewProduct(userId: number, productId: number) {
-    const hasPurchased = await this.orderItemRepo
+  /** Đã mua sản phẩm và nhận hàng thành công (đơn đã giao + đã thanh toán) */
+  private hasPurchased(userId: number, productId: number) {
+    return this.orderItemRepo
       .createQueryBuilder('orderItem')
       .innerJoin('orderItem.order', 'order')
       .where('orderItem.productId = :productId', { productId })
@@ -145,8 +146,26 @@ export class ReviewsService {
         paymentStatus: PaymentStatus.PAID,
       })
       .getExists();
+  }
 
-    if (!hasPurchased) {
+  /**
+   * Trạng thái đánh giá của người đang xem với 1 sản phẩm:
+   * frontend dùng để ẩn form viết đánh giá và hiện nút sửa / xoá đánh giá của chính họ.
+   */
+  async getMyReviewStatus(userId: number, productId: number) {
+    const [purchased, myReview] = await Promise.all([
+      this.hasPurchased(userId, productId),
+      this.reviewRepo.findOne({ where: { userId, productId } }),
+    ]);
+    return {
+      hasPurchased: purchased,
+      canReview: purchased && !myReview,
+      myReview,
+    };
+  }
+
+  private async assertUserCanReviewProduct(userId: number, productId: number) {
+    if (!(await this.hasPurchased(userId, productId))) {
       throw new BadRequestException(
         'Chỉ có thể đánh giá sản phẩm sau khi bạn đã mua và nhận hàng thành công.',
       );

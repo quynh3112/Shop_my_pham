@@ -17,9 +17,12 @@ import { BannerService } from './banner.service';
 import { CreateBannerDto, UpdateBannerDto } from './dto/banner.dto';
 import { BannerPlacement } from './entity/banner.entity';
 import { JwtAuthGuard } from '../guard/jwt-auth.guard';
+import { PermissionGuard } from '../guard/permission.guard';
+import { RequirePermission } from '../guard/require-permission.decorator';
 
 type BannerUploadFile = { buffer: Buffer };
 
+@RequirePermission('banners')
 @Controller('banner')
 export class BannerController {
   constructor(private readonly bannerService: BannerService) {}
@@ -30,13 +33,13 @@ export class BannerController {
   }
 
   @Get('admin')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
   listAdmin() {
     return this.bannerService.listAdminBanners();
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
   @UseInterceptors(FileInterceptor('image'))
   create(
     @Body() input: CreateBannerDto,
@@ -49,7 +52,7 @@ export class BannerController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() input: UpdateBannerDto,
@@ -58,7 +61,7 @@ export class BannerController {
   }
 
   @Patch(':id/active')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
   setActive(
     @Param('id', ParseIntPipe) id: number,
     @Body('isActive') isActive: boolean,
@@ -67,7 +70,7 @@ export class BannerController {
   }
 
   @Patch(':id/image')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
   @UseInterceptors(FileInterceptor('image'))
   replaceImage(
     @Param('id', ParseIntPipe) id: number,
@@ -80,7 +83,7 @@ export class BannerController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.bannerService.removeBanner(id);
   }

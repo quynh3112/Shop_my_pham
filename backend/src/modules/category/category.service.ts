@@ -1,15 +1,18 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from './entity/category.entity';
 import { Repository } from 'typeorm';
+import { Product } from '../product/entity/product.entity';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
 import { uniqueSlug } from 'src/until/slug';
 export interface CategoryNode {
   id: number;
+  parentId: number | null;
   name: string;
   slug: string;
   sortOrder: number;
@@ -85,12 +88,10 @@ export class CategoryService {
     if (data.parentId != null) {
       await this.assertParentIsValid(data.parentId, id);
     }
-    if (data.name !== undefined) {
+    if (data.name !== undefined && data.name !== existing.name) {
+      // Đổi tên thì đổi luôn slug (so sánh trước khi gán tên mới)
+      existing.slug = await uniqueSlug(data.name, (slug) => this.slugIsTaken(slug, id));
       existing.name = data.name;
-      existing.slug =
-        data.name === existing.name
-          ? existing.slug
-          : await uniqueSlug(data.name, (slug) => this.slugIsTaken(slug, id));
     }
     if (data.parentId !== undefined) {
       existing.parentId = data.parentId;
@@ -112,6 +113,7 @@ export class CategoryService {
         row.id,
         {
           id: row.id,
+          parentId: row.parentId,
           name: row.name,
           slug: row.slug,
           sortOrder: row.sortOrder,
@@ -132,5 +134,26 @@ export class CategoryService {
         }
     }
     return roots
+  }
+
+  /**
+   * Xoá danh mục: còn sản phẩm thì không cho xoá;
+   * danh mục con được chuyển lên làm con của danh mục cha (hoặc thành gốc).
+   */
+  async removeCategory(id: number) {
+    const existing = await this.categoryRepo.findOne({ where: { id } });
+    if (!existing) throw new NotFoundException('Không tìm thấy danh mục.');
+
+    await this.categoryRepo.manager.transaction(async (manager) => {
+      const productCount = await manager.count(Product, { where: { categoryId: id } });
+      if (productCount > 0) {
+        throw new ConflictException(
+          `Danh mục "${existing.name}" còn ${productCount} sản phẩm. Hãy chuyển các sản phẩm sang danh mục khác trước khi xoá.`,
+        );
+      }
+      await manager.update(Category, { parentId: id }, { parentId: existing.parentId });
+      await manager.delete(Category, id);
+    });
+    return { success: true };
   }
 }

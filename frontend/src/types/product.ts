@@ -1,9 +1,13 @@
+import type { SkinConcern, SkinType } from "./skin";
 export interface ProductCreate{
     name:string
     description:string
     price:number
     categoryId:number,
     isActive:boolean
+    // Nhãn cho phân tích da (mã trong utils/skin.ts)
+    skinTypes?:string[]
+    concerns?:string[]
     variants:ProductVariantCreate[]
 }
 
@@ -12,13 +16,20 @@ export interface ProductItem {
     name: string
     description?: string | null
     descriptionPdfUrl?: string | null
+    skinTypes?: string[]
+    concerns?: string[]
     price?: number
     categoryId?: number
     isActive?: boolean
     image?: string
-    images?: string[]
+    // API trả về object ảnh, dữ liệu cũ có thể là chuỗi URL
+    images?: (string | ProductImageItem)[]
     stock?: number
     sold?: number
+    averageRating?: number
+    /** Lý do gợi ý khi xếp "Dành cho bạn" (vd. "Trị mụn", "Hợp da dầu") */
+    recommendReasons?: string[]
+    reviewCount?: number
     category?: {
         id: number
         name: string
@@ -57,9 +68,13 @@ export interface ProductQuery{
     categoryId?:number
     minPrice?:number
     maxPrice?:number
-    variantSize?:string
+    variantName?:string
     size?:string
-    sort?: 'newest' | 'price-asc' | 'price-desc' | 'name';
+    skinTypes?: SkinType[]
+    concerns?: SkinConcern[]
+    minRating?: number
+    inStock?: boolean
+    sort?: 'relevance' | 'newest' | 'price-asc' | 'price-desc' | 'name' | 'best-selling' | 'rating' | 'for-you';
     page?: number;
     limit?: number;
 }
@@ -69,6 +84,8 @@ export interface ProductUpdate{
     price?:number
     categoryId?:number
     isActive?:boolean
+    skinTypes?:string[]
+    concerns?:string[]
     variants?:ProductVariantUpdate[]
 
 
@@ -77,3 +94,10 @@ export type ProductUpdateVariantInput =
   | { id: number; size: string; name: string }
   | { size: string; name: string; initialStock: number };
   
+
+export interface ProductImageItem {
+    id: number
+    url: string
+    thumbUrl?: string | null
+    sortOrder?: number
+}

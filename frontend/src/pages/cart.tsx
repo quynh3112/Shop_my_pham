@@ -1,12 +1,13 @@
 import { DeleteOutlined, MinusOutlined, PlusOutlined, ShoppingOutlined } from "@ant-design/icons";
 import { Alert, Button, Empty, Spin, message } from "antd";
-import { isAxiosError } from "axios";
+import { Link, useNavigate } from "react-router-dom";
 import useCart from "../hooks/useCart";
+import { getApiErrorMessage } from "../utils/error";
 import useRequireLogin from "../hooks/useRequireLogin";
 import type { CartItemView } from "../types/cart";
+import { formatPrice } from "../utils/format";
+import { toFileUrl } from "../service/product.service";
 
-const formatPrice = (value: number) =>
-  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(value);
 
 function CartItem({ item, disabled, onUpdate, onRemove }: {
   item: CartItemView;
@@ -16,13 +17,13 @@ function CartItem({ item, disabled, onUpdate, onRemove }: {
 }) {
   return (
     <article className="flex gap-4 border-b border-[#f0d8d8] py-5 last:border-b-0 sm:gap-6">
-      <div className="h-28 w-24 shrink-0 overflow-hidden rounded-sm bg-[#f8eeee] sm:h-32 sm:w-28">
-        {item.thumbUrl ? <img className="h-full w-full object-cover" src={item.thumbUrl} alt={item.name} /> : <div className="flex h-full items-center justify-center text-[#d5a4a4]"><ShoppingOutlined className="text-2xl" /></div>}
-      </div>
+      <Link to={`/product/${item.productId}`} className="h-28 w-24 shrink-0 overflow-hidden rounded-sm bg-[#f8eeee] sm:h-32 sm:w-28" aria-label={`Xem ${item.name}`}>
+        {item.thumbUrl ? <img className="h-full w-full object-cover transition hover:scale-105" src={toFileUrl(item.thumbUrl)} alt={item.name} /> : <div className="flex h-full items-center justify-center text-[#d5a4a4]"><ShoppingOutlined className="text-2xl" /></div>}
+      </Link>
       <div className="flex min-w-0 flex-1 flex-col justify-between gap-3">
         <div className="flex justify-between gap-3">
           <div>
-            <h2 className="font-['Bodoni_72'] text-xl leading-tight text-[#2d2020] sm:text-2xl">{item.name}</h2>
+            <Link to={`/product/${item.productId}`} className="!text-inherit hover:!text-[#e16463]"><h2 className="font-['Bodoni_72'] text-xl leading-tight text-[#2d2020] transition hover:text-[#e16463] sm:text-2xl">{item.name}</h2></Link>
             <p className="mt-1 text-sm text-[#987979]">{item.size || "Standard"}{item.color ? ` · ${item.color}` : ""}</p>
             {!item.isAvailable && <p className="mt-1 text-xs font-medium text-[#c64f52]">Sản phẩm tạm hết hàng</p>}
           </div>
@@ -41,23 +42,16 @@ function CartItem({ item, disabled, onUpdate, onRemove }: {
   );
 }
 
-const getCartError = (error: unknown) => {
-  if (isAxiosError(error)) {
-    const serverMessage = error.response?.data?.message;
-    if (typeof serverMessage === "string") return serverMessage;
-  }
-  return "Không thể cập nhật giỏ hàng.";
-};
-
 export default function Cart() {
   const { cart, loading, error, updateCart, removeItem, clearCart, isMutating } = useCart();
   const { handleAuthError } = useRequireLogin();
+  const navigate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
   const runCartAction = async (action: () => Promise<unknown>) => {
     try {
       await action();
     } catch (actionError) {
-      if (!handleAuthError(actionError)) messageApi.error(getCartError(actionError));
+      if (!handleAuthError(actionError)) messageApi.error(getApiErrorMessage(actionError, "Không thể cập nhật giỏ hàng."));
     }
   };
   const items = cart?.items ?? [];
@@ -77,11 +71,11 @@ export default function Cart() {
               <div className="flex items-center justify-between border-b border-[#f0d8d8] py-4 text-xs uppercase tracking-[0.18em] text-[#987979]"><span>Sản phẩm</span><button type="button" className="normal-case tracking-normal text-[#b47777] hover:text-[#c64f52] disabled:opacity-40" onClick={() => void runCartAction(() => clearCart())} disabled={isMutating}>Xóa tất cả</button></div>
               {items.map((item) => <CartItem key={item.id} item={item} onUpdate={(id, quantity) => void runCartAction(() => updateCart({ id, quantity }))} onRemove={(id) => void runCartAction(() => removeItem(id))} disabled={isMutating} />)}
             </section>
-            <aside className="h-fit border border-[#e8caca] bg-[#fff4f2] p-6 sm:p-8 lg:sticky lg:top-6">
+            <aside className="h-fit border border-[#e8caca] bg-[#fff4f2] p-6 sm:p-8 lg:sticky lg:top-20">
               <h2 className="font-['Bodoni_72'] text-3xl text-[#2d2020]">Tóm tắt đơn hàng</h2>
               <div className="mt-7 space-y-4 border-b border-[#e8caca] pb-6 text-sm text-[#765f5f]"><div className="flex justify-between"><span>Tạm tính</span><span>{formatPrice(cart?.subtotal ?? 0)}</span></div><div className="flex justify-between"><span>Phí vận chuyển</span><span>{formatPrice(cart?.shippingFee ?? 0)}</span></div></div>
               <div className="flex justify-between py-6 text-lg font-medium text-[#2d2020]"><span>Tổng cộng</span><span>{formatPrice(cart?.total ?? 0)}</span></div>
-              <Button type="primary" block size="large" className="!h-12 !border-[#d66c6d] !bg-[#d66c6d] hover:!border-[#bc5758] hover:!bg-[#bc5758]" disabled={cart?.hasUnavailableItems}>Tiến hành thanh toán</Button>
+              <Button type="primary" block size="large" className="!h-12 !border-[#d66c6d] !bg-[#d66c6d] hover:!border-[#bc5758] hover:!bg-[#bc5758]" disabled={cart?.hasUnavailableItems || isMutating} onClick={() => navigate("/checkout")}>Tiến hành thanh toán</Button>
               {cart?.hasUnavailableItems && <p className="mt-3 text-center text-xs text-[#c64f52]">Vui lòng xử lý sản phẩm hết hàng trước khi thanh toán.</p>}
             </aside>
           </div>

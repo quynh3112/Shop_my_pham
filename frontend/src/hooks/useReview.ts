@@ -2,39 +2,77 @@
 import {
   addReview,
   deleteMyReview,
-  listMyReviews,
+  getMyReviewStatus,
   reviewsInProduct,
   updateMyReview,
 } from "../service/review.service";
-import type { ReviewCreate } from "../types/review";
+import type { ReviewCreate, ReviewUpdate, ReviewView } from "../types/review";
+import { isLoggedIn } from "../utils/auth";
 
 export const reviewQueryKey = ["reviews"] as const;
 
-const normalizeReviews = (payload: unknown) => {
-  if (Array.isArray(payload)) return payload;
-  if (!payload || typeof payload !== "object") return [];
-
-  const data = payload as Record<string, unknown>;
-  const nested = data.data ?? data.items ?? data.reviews ?? data.result;
-  return Array.isArray(nested) ? nested : [];
+const isReviewUser = (value: unknown) => {
+  if (value === undefined || value === null) return true;
+  if (typeof value !== "object") return false;
+  const user = value as Record<string, unknown>;
+  return (
+    typeof user.id === "number" &&
+    typeof user.fullName === "string" &&
+    (user.avatarUrl === undefined ||
+      typeof user.avatarUrl === "string" ||
+      user.avatarUrl === null)
+  );
 };
 
-export default function useReview(productId?: number) {
+const isReview = (value: unknown): value is ReviewView => {
+  if (typeof value !== "object" || value === null) return false;
+  const review = value as Record<string, unknown>;
+  return (
+    typeof review.id === "number" &&
+    typeof review.productId === "number" &&
+    typeof review.rating === "number" &&
+    (typeof review.comment === "string" || review.comment === null) &&
+    (review.createdAt === undefined || typeof review.createdAt === "string") &&
+    (review.updatedAt === undefined || typeof review.updatedAt === "string") &&
+    isReviewUser(review.user)
+  );
+};
+
+const normalizeReviews = (payload: unknown): ReviewView[] => {
+  let reviews: unknown = payload;
+  if (!Array.isArray(reviews) && typeof reviews === "object" && reviews !== null) {
+    const data = reviews as Record<string, unknown>;
+    reviews = data.data ?? data.items ?? data.reviews ?? data.result;
+  }
+  if (!Array.isArray(reviews) || !reviews.every(isReview)) {
+    throw new TypeError("Dữ liệu đánh giá sản phẩm không hợp lệ.");
+  }
+  return reviews;
+};
+
+export default function useReview(productId: number) {
   const queryClient = useQueryClient();
-  const validProductId = productId !== undefined && Number.isInteger(productId) && productId > 0 ? productId : undefined;
 
   const reviewsQuery = useQuery({
-    queryKey: validProductId ? (["reviews", validProductId] as const) : reviewQueryKey,
+    queryKey: [...reviewQueryKey, productId] as const,
     queryFn: async () => {
-      const payload = validProductId
-        ? await reviewsInProduct(validProductId)
-        : await listMyReviews();
-
-      return normalizeReviews(payload);
+      return normalizeReviews(await reviewsInProduct(productId));
     },
+    enabled: Number.isInteger(productId) && productId > 0,
   });
 
-  const refreshReviews = () => queryClient.invalidateQueries({ queryKey: ["reviews"] });
+  // Chỉ hỏi khi đã đăng nhập; khách vãng lai không viết đánh giá được
+  const statusQuery = useQuery({
+    queryKey: [...reviewQueryKey, productId, "me"] as const,
+    queryFn: () => getMyReviewStatus(productId),
+    enabled: Number.isInteger(productId) && productId > 0 && isLoggedIn(),
+  });
+
+  const refreshReviews = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["reviews"] }),
+      queryClient.invalidateQueries({ queryKey: ["product-rating"] }),
+    ]);
 
   const addMutation = useMutation({
     mutationFn: (payload: ReviewCreate) => addReview(payload),
@@ -42,7 +80,7 @@ export default function useReview(productId?: number) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ reviewId, payload }: { reviewId: number; payload: ReviewCreate }) =>
+    mutationFn: ({ reviewId, payload }: { reviewId: number; payload: ReviewUpdate }) =>
       updateMyReview(reviewId, payload),
     onSuccess: refreshReviews,
   });
@@ -57,6 +95,8 @@ export default function useReview(productId?: number) {
     loading: reviewsQuery.isLoading,
     error: reviewsQuery.error instanceof Error ? reviewsQuery.error.message : null,
     fetchReviews: reviewsQuery.refetch,
+    myStatus: statusQuery.data,
+    statusLoading: statusQuery.isLoading,
     reviewsQuery,
     addMutation,
     addReview: addMutation.mutateAsync,
@@ -65,6 +105,9 @@ export default function useReview(productId?: number) {
     updateReview: updateMutation.mutateAsync,
     deleteMutation,
     deleteReview: deleteMutation.mutateAsync,
-    isMutating: addMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+    isMutating:
+      addMutation.isPending ||
+      updateMutation.isPending ||
+      deleteMutation.isPending,
   };
 }

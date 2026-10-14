@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   BadRequestException,
   ConflictException,
   HttpException,
@@ -21,6 +22,7 @@ import {
 } from '../order_status_history/entity/order_status_history';
 import { OrderItem } from '../order_item/entity/order-item.entity';
 import { PaymentProviderRegistry } from '../payment/payment-provider.registry';
+import { isMomoSandbox } from '../payment/momo';
 import { ProductVariant } from '../productvariant/entity/produc_variant.entity';
 import { AdminOrderListQueryDto, OrderBuyNowDto, OrderCreateDto, OrderListQueryDto } from './dto/order.dto';
 import { Order, PaymentMethod, PaymentStatus } from './entity/order.entity';
@@ -41,6 +43,9 @@ type NewOrderLine = Omit<
   >,
   'variantId'
 > & { variantId: number };
+
+// Thông tin khách trả kèm đơn cho admin
+const ORDER_USER_FIELDS = ['id', 'fullName', 'email', 'phone', 'avatarUrl'] as const;
 
 type StatusLabelMap = Record<OrderStatus, string>;
 type TransitionMap = Record<OrderStatus, OrderStatus[]>;
@@ -293,7 +298,36 @@ export class OrderService {
       order = await this.getOrderDetailById(order.id);
     }
 
-    return order;
+    // Thanh toán online: frontend chuyển khách sang trang thanh toán này
+    return { ...order, paymentUrl: payment.redirectUrl ?? null };
+  }
+
+  /**
+   * MoMo giả lập: khách bấm "thành công" / "huỷ" trên trang thanh toán thử nghiệm.
+   * Chỉ chạy khi MOMO_MODE khác "live"; không có tiền thật nào được chuyển.
+   */
+  async confirmMomoSandbox(userId: number, code: string, success: boolean) {
+    if (!isMomoSandbox()) {
+      throw new ForbiddenException('Thanh toán MoMo thử nghiệm đã tắt.');
+    }
+    const order = await this.orderRepo.findOne({ where: { code } });
+    if (!order || order.userId !== userId) {
+      throw new NotFoundException('Không tìm thấy đơn hàng này.');
+    }
+    if (order.paymentMethod !== PaymentMethod.MOMO) {
+      throw new BadRequestException('Đơn hàng này không thanh toán bằng MoMo.');
+    }
+    if (order.status === OrderStatus.CANCELLED) {
+      throw new ConflictException('Đơn hàng đã bị huỷ nên không thể thanh toán.');
+    }
+    if (order.paymentStatus === PaymentStatus.PAID) {
+      throw new ConflictException('Đơn hàng đã được thanh toán.');
+    }
+    // Huỷ thanh toán: giữ đơn ở trạng thái chưa thanh toán, khách có thể thanh toán lại sau
+    if (success) {
+      await this.orderRepo.update(order.id, { paymentStatus: PaymentStatus.PAID });
+    }
+    return this.getMyOrder(userId, code);
   }
 
   private async getOrderDetailByIdInternal(manager: EntityManager, id: number) {
@@ -468,7 +502,9 @@ export class OrderService {
     const qb = this.orderRepo
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.items', 'items')
-      .leftJoinAndSelect('order.user', 'user');
+      // Chỉ lấy thông tin liên hệ của khách, không trả passwordHash
+      .leftJoin('order.user', 'user')
+      .addSelect(ORDER_USER_FIELDS.map((f) => `user.${f}`));
 
     if (query.status !== undefined) {
       qb.andWhere('order.status = :status', { status: query.status });
@@ -482,7 +518,7 @@ export class OrderService {
 
     if (query.search) {
       qb.andWhere(
-        '(order.code LIKE :search OR order.receiverName LIKE :search OR user.fullName LIKE :search OR user.email LIKE :search)',
+        '(order.code ILIKE :search OR order.receiverName ILIKE :search OR order.receiverPhone ILIKE :search OR user.fullName ILIKE :search OR user.email ILIKE :search)',
         { search: `%${query.search}%` },
       );
     }
@@ -524,7 +560,13 @@ export class OrderService {
       throw new NotFoundException('Không tìm thấy đơn hàng này.');
     }
 
-    return order;
+    const { user, ...rest } = order;
+    return {
+      ...rest,
+      user: user
+        ? Object.fromEntries(ORDER_USER_FIELDS.map((f) => [f, user[f]]))
+        : null,
+    };
   }
 
   updateOrderStatus(orderId: number, next: OrderStatus, adminUserId: number) {

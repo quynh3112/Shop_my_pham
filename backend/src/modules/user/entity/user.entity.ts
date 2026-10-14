@@ -21,6 +21,8 @@ import { Favorite } from 'src/modules/favorites/entity/favorite.entity';
 
 export enum Role {
   USER = 'USER',
+  // Nhân viên: vào khu quản lý theo các quyền được admin gán (cột permissions)
+  STAFF = 'STAFF',
   ADMIN = 'ADMIN',
 }
 
@@ -50,6 +52,14 @@ export class User {
     default: Role.USER,
   })
   role!: Role;
+
+  // Quyền khu quản lý của nhân viên (mã trong auth/permissions.ts); ADMIN không cần
+  @Column({ type: 'text', array: true, default: () => "'{}'" })
+  permissions!: string[];
+
+  // Bị khoá thì không đăng nhập / làm mới phiên / vào khu quản lý được
+  @Column({ default: true })
+  isActive!: boolean;
 
   // Đăng ký mới tạo với false, nhập đúng OTP gửi qua email mới thành true.
   // Mặc định true để tài khoản có sẵn (admin seed...) không bị khóa đăng nhập.

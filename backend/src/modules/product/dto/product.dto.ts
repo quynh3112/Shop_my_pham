@@ -4,6 +4,8 @@ export interface ProductCreateInput {
   price: number;
   categoryId: number;
   isActive?: boolean;
+  skinTypes?: string[];
+  concerns?: string[];
   variants: ProductVariantCreateInput[];
 }
 export interface ProductVariantCreateInput {
@@ -22,6 +24,8 @@ export interface ProductCreateInput {
   price: number;
   categoryId: number;
   isActive?: boolean;
+  skinTypes?: string[];
+  concerns?: string[];
   variants: ProductVariantCreateInput[];
 }
 
@@ -31,6 +35,8 @@ export interface ProductUpdateInput {
   price?: number;
   categoryId?: number;
   isActive?: boolean;
+  skinTypes?: string[];
+  concerns?: string[];
   variants?: ProductUpdateVariantInput[];
 }
 
@@ -41,7 +47,23 @@ export interface ProductQuery {
   maxPrice?: number;
   variantName?: string;
   size?: string;
-  sort: 'newest' | 'price-asc' | 'price-desc' | 'name';
+  /** Mã loại da / vấn đề da, nhận "oily,dry" hoặc lặp tham số ?skinTypes=oily&skinTypes=dry */
+  skinTypes?: string | string[];
+  concerns?: string | string[];
+  minRating?: number;
+  inStock?: boolean | string;
+  sort?: ProductSort;
   page: number;
   limit: number;
 }
+
+export type ProductSort =
+  | 'relevance'
+  | 'newest'
+  | 'price-asc'
+  | 'price-desc'
+  | 'name'
+  | 'best-selling'
+  | 'rating'
+  // Cá nhân hoá theo phân tích da / yêu thích / đã mua (khách vãng lai: theo độ phổ biến)
+  | 'for-you';

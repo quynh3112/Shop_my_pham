@@ -1,16 +1,17 @@
 ﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addFavorite, listMyFavorites, removeMyFavorite } from "../service/favorite.service";
 import { isLoggedIn } from "../utils/auth";
+import type { FavoriteView } from "../types/favorite";
 
 export const favoriteQueryKey = ["favorites"] as const;
 
-const normalizeFavorites = (payload: unknown) => {
-  if (Array.isArray(payload)) return payload;
+const normalizeFavorites = (payload: unknown): FavoriteView[] => {
+  if (Array.isArray(payload)) return payload as FavoriteView[];
   if (!payload || typeof payload !== "object") return [];
 
   const data = payload as Record<string, unknown>;
   const nested = data.data ?? data.items ?? data.favorites ?? data.result;
-  return Array.isArray(nested) ? nested : [];
+  return Array.isArray(nested) ? (nested as FavoriteView[]) : [];
 };
 
 export default function useFavorite() {

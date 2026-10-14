@@ -7,12 +7,22 @@ export interface StoredUser {
   phone?: string;
   avatarUrl?: string;
   role?: string;
+  /** Quyền khu quản lý của nhân viên (STAFF) */
+  permissions?: string[];
 }
 
 // Phát ra khi đăng nhập / đăng xuất để các component cập nhật lại
 export const AUTH_CHANGED_EVENT = "auth-changed";
 
 export const getToken = () => localStorage.getItem("token");
+
+export const getRefreshToken = () => localStorage.getItem("refreshToken");
+
+// Lưu cặp token mới sau khi làm mới phiên (không đổi người dùng nên không phát AUTH_CHANGED)
+export const saveTokens = (accessToken: string, refreshToken?: string) => {
+  localStorage.setItem("token", accessToken);
+  if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+};
 
 export const isLoggedIn = () => Boolean(getToken());
 
@@ -27,10 +37,17 @@ export const getStoredUser = (): StoredUser | null => {
 
 export const isAdmin = () => getStoredUser()?.role === "ADMIN";
 
+/** ADMIN hoặc nhân viên (STAFF) — được vào khu quản lý (từng trang còn kiểm tra quyền riêng) */
+export const isStaffArea = () => {
+  const role = getStoredUser()?.role;
+  return role === "ADMIN" || role === "STAFF";
+};
+
 export const notifyAuthChanged = () => window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
 
 export const clearAuth = () => {
   localStorage.removeItem("token");
+  localStorage.removeItem("refreshToken");
   localStorage.removeItem("user");
   notifyAuthChanged();
 };

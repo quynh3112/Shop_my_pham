@@ -13,6 +13,7 @@ import { OtpModule } from '../otp/otp.module';
 @Module({
   providers: [AuthService,LocalStrategy,JwtStrategy],
   controllers: [AuthController],
+  exports: [JwtModule],
   imports:[ JwtModule.register({
       secret:'b0e56384e3a1e879e8ffb2fabb71ca8091363bb2dfa070c80356eba707ea4af9' ,
       signOptions: {

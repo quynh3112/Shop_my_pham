@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ProductService } from './product.service';
+import { RecommendationService } from './recommendation.service';
 import { ProductController } from './product.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from './entity/product.entity';
@@ -11,7 +12,7 @@ import { InventoryMovementService } from '../inventory_movement/inventory_moveme
 import { Favorite } from '../favorites/entity/favorite.entity';
 
 @Module({
-  providers: [ProductService, CategoryService, InventoryMovementService],
+  providers: [ProductService, CategoryService, InventoryMovementService, RecommendationService],
   controllers: [ProductController],
   imports: [
     TypeOrmModule.forFeature([

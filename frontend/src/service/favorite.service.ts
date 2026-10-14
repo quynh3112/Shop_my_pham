@@ -1,7 +1,7 @@
 ﻿import { api } from "../config/api";
 import type { FavoriteCreate } from "../types/favorite";
 
-const endpoint = "/favorite";
+const endpoint = "/favorites";
 
 const authHeaders = () => {
   const token = localStorage.getItem("token");
@@ -18,21 +18,21 @@ export const addFavorite = async (payload: FavoriteCreate) => {
 };
 
 export const listMyFavorites = async () => {
-  const res = await api.get(`${endpoint}/my`, {
+  const res = await api.get(endpoint, {
     headers: authHeaders(),
   });
   return res.data;
 };
 
 export const removeMyFavorite = async (productId: number) => {
-  const res = await api.delete(`${endpoint}/my/${productId}`, {
+  const res = await api.delete(`${endpoint}/product/${productId}`, {
     headers: authHeaders(),
   });
   return res.data;
 }
 ;
 export const checkFavorite = async (productId: number) => {
-  const res = await api.get(`${endpoint}/my/${productId}`, {
+  const res = await api.get(`${endpoint}/check/${productId}`, {
     headers: authHeaders(),
   });
   return res.data;

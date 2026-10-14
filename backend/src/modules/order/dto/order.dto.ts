@@ -1,5 +1,6 @@
 // order.dto.ts
 import {
+  IsBoolean,
   IsInt,
   IsPositive,
   IsEnum,
@@ -124,4 +125,10 @@ export class OrderCodeParamDto {
   @IsString()
   @MaxLength(32)
   code!: string;
+}
+
+// ----- MoMo giả lập -----
+export class MomoSandboxDto {
+  @IsBoolean()
+  success!: boolean;
 }

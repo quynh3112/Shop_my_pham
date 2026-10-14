@@ -86,7 +86,8 @@ async getCart(userId:number):Promise<CartView>{
     slug:item.variant.product.slug,
     size:item.variant.size,
     color:item.variant.name,
-    thumbUrl:item.variant.product.images[0]?.thumbUrl || null,
+    // Ảnh bìa = ảnh có sortOrder nhỏ nhất (relation không đảm bảo thứ tự)
+    thumbUrl:[...item.variant.product.images].sort((a,b)=>a.sortOrder-b.sortOrder)[0]?.thumbUrl || null,
     unitPrice:item.variant.product.price,
     quantity:item.quantity,
     lineTotal:item.variant.product.price*item.quantity,

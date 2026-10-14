@@ -1,11 +1,24 @@
 import {
   IsEmail,
+  IsInt,
   IsNotEmpty,
+  IsPositive,
   IsString,
   Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
+
+export class RefreshTokenDto {
+  @IsInt()
+  @IsPositive()
+  userId!: number;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(256)
+  refreshToken!: string;
+}
 
 // "email" nhận cả email hoặc số điện thoại, giống form đăng nhập
 export class ForgotPasswordDto {

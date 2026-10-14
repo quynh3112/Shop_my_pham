@@ -11,7 +11,7 @@ import {
 export const productQueryKey = ["products"] as const;
 export const productDetailKey = (id: number) => ["product", id] as const;
 
-const normalizeProducts = (payload: unknown): ProductItem[] => {
+export const normalizeProducts = (payload: unknown): ProductItem[] => {
   if (Array.isArray(payload)) return payload as ProductItem[];
   if (Array.isArray((payload as { data?: unknown })?.data)) return (payload as { data: ProductItem[] }).data;
   if (Array.isArray((payload as { products?: unknown })?.products)) return (payload as { products: ProductItem[] }).products;

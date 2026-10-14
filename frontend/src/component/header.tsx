@@ -1,8 +1,15 @@
-import { ShoppingCartOutlined } from "@ant-design/icons";
+import {
+  DashboardOutlined,
+  ExperimentOutlined,
+  FileTextOutlined,
+  HeartOutlined,
+  LogoutOutlined,
+  ShoppingCartOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
 import {
   Dropdown,
   Input,
-  Modal,
   message,
   type MenuProps,
 } from "antd";
@@ -14,12 +21,14 @@ import useCart from "../hooks/useCart";
 import useRequireLogin from "../hooks/useRequireLogin";
 import {
   AUTH_CHANGED_EVENT,
-  clearAuth,
   getStoredUser,
   safeRedirectPath,
 } from "../utils/auth";
-import CategoryMenu from "./category";
+import MainNav from "./mainNav";
 import Authencation from "./authencation";
+import ProfileModal from "./profileModal";
+import { toFileUrl } from "../service/product.service";
+import { logoutSession } from "../config/api";
 
 export default function Header() {
   const { cart } = useCart();
@@ -70,7 +79,10 @@ export default function Header() {
     void queryClient.invalidateQueries();
 
     const redirect = safeRedirectPath(searchParams.get("redirect"));
-    if (redirect) navigate(redirect, { replace: true });
+    // Admin vào thẳng trang quản lý (trừ khi đang được đưa về một trang admin cụ thể)
+    if (loggedUser.role === "ADMIN" || loggedUser.role === "STAFF") {
+      navigate(redirect?.startsWith("/admin") ? redirect : "/admin", { replace: true });
+    } else if (redirect) navigate(redirect, { replace: true });
     else clearLoginParams();
   };
 
@@ -78,7 +90,7 @@ export default function Header() {
     if (key === "1") {
       setIsProfileOpen(true);
     } else if (key === "2") {
-      clearAuth();
+      logoutSession();
       queryClient.clear();
       navigate("/", { replace: true });
     } else {
@@ -87,20 +99,38 @@ export default function Header() {
   };
 
   const itemsDrop: MenuProps["items"] = [
-    { label: "Profile", key: "1" },
-    ...(user?.role === "ADMIN"
+    { label: "Thông tin cá nhân", key: "1", icon: <UserOutlined /> },
+    { label: "Đơn hàng của tôi", key: "/orders", icon: <FileTextOutlined /> },
+    { label: "Sản phẩm yêu thích", key: "/favorites", icon: <HeartOutlined /> },
+    { label: "Lịch sử phân tích da", key: "/skin-analysis", icon: <ExperimentOutlined /> },
+    // Admin + nhân viên: 1 lối vào khu quản lý; menu bên trái chỉ hiện mục được cấp quyền
+    ...(user?.role === "ADMIN" || user?.role === "STAFF"
       ? [
-          { label: "Quản lý sản phẩm", key: "/admin/products" },
-          { label: "Quản lý banner", key: "/admin/banners" },
+          {
+            label: "Quản lý",
+            key: "/admin",
+            icon: <DashboardOutlined />,
+            // children: [
+            //   { label: "Sản phẩm", key: "/admin/products" },
+            //   { label: "Danh mục", key: "/admin/categories" },
+            //   { label: "Kho hàng", key: "/admin/inventory" },
+            //   { label: "Đơn hàng", key: "/admin/orders" },
+            //   { label: "Banner", key: "/admin/banners" },
+            //   { label: "Chat khách hàng", key: "/admin/chat" },
+            //   { label: "Báo cáo", key: "/admin/reports" },
+            // ],
+          },
         ]
       : []),
-    { label: "Đăng xuất", key: "2" },
+    { type: "divider" },
+    { label: "Đăng xuất", key: "2", icon: <LogoutOutlined />, danger: true },
   ];
 
   return (
     <>
       {contextHolder}
-      <div className="flex flex-col">
+      {/* Không bọc chung với nav: nav cần nằm trực tiếp trong trang để sticky theo cả trang */}
+      <header>
         <div className="flex items-center justify-between px-6 py-3 lg:px-12">
           <Link to="/" className="text-3xl font-bold !text-inherit">
             <h1 className="font-['Cormorant_Garamond']">LUNELLE</h1>
@@ -140,8 +170,9 @@ export default function Header() {
                 >
                 <img
                   src={
-                    user.avatarUrl ||
-                    "https://i.pinimg.com/736x/f4/c7/1c/f4c71c4050c8b01d4ec39ab4185bd23a.jpg"
+                    user.avatarUrl
+                      ? toFileUrl(user.avatarUrl)
+                      : "https://i.pinimg.com/736x/f4/c7/1c/f4c71c4050c8b01d4ec39ab4185bd23a.jpg"
                   }
                   alt="avatar"
                 className="w-9 h-9 rounded-full object-cover"
@@ -162,40 +193,14 @@ export default function Header() {
           )}
           </div>
         </div>
-        <div className="flex justify-center border-t border-[#f3d4d7]">
-          <CategoryMenu />
-        </div>
+      </header>
+      <MainNav />
         <Authencation
           open={isLoginOpen}
           onClose={handleClose}
           onLoginSuccess={handleLoginSuccess}
         />
-        <Modal
-          title="Profile"
-          open={isProfileOpen}
-          footer={null}
-          onCancel={() => setIsProfileOpen(false)}
-        >
-          {user && (
-            <div className="flex flex-col items-center gap-4 py-4">
-              <img
-                src={
-                  user.avatarUrl ||
-                  "https://i.pinimg.com/736x/f4/c7/1c/f4c71c4050c8b01d4ec39ab4185bd23a.jpg"
-                }
-                alt="avatar"
-                className="h-24 w-24 rounded-full object-cover"
-              />
-              <div className="w-full space-y-2 text-center">
-                <h2 className="text-xl font-semibold">{user.fullName}</h2>
-                <p>Email: {user.email}</p>
-                <p>Phone: {user.phone || "Chưa cập nhật"}</p>
-                <p>Role: {user.role || "Customer"}</p>
-              </div>
-            </div>
-          )}
-        </Modal>
-      </div>
+        <ProfileModal open={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
     </>
   );
 }

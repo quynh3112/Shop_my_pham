@@ -4,6 +4,7 @@ import { useState } from "react";
 import CreateBanner from "../component/createBanner";
 import Dialog from "../component/dialog";
 import useBanner from "../hooks/useBanner";
+import { toFileUrl } from "../service/product.service";
 import type { Banner, CreateBanner as BannerPayload } from "../types/banner";
 
 export default function MnBanner() {
@@ -89,7 +90,7 @@ export default function MnBanner() {
             className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition hover:border-[#E16463]"
           >
             <HolderOutlined className="cursor-grab text-lg text-gray-400" />
-            <Image width={150} height={72} className="rounded object-cover" src={banner.imageUrl} alt={banner.altText} />
+            <Image width={150} height={72} className="rounded object-cover" src={banner.imageUrl ? toFileUrl(banner.imageUrl) : undefined} alt={banner.altText} />
             <div className="min-w-0 flex-1">
               <div className="truncate font-semibold">{banner.name}</div>
               <div className="truncate text-sm text-gray-500">{banner.altText}</div>

@@ -6,10 +6,14 @@ import ProductGallery from "../component/productGallery";
 import ProductPurchaseForm from "../component/productPurchaseForm";
 import ProductRatingFavorite from "../component/productRatingFavorite";
 import Review from "../component/review";
+import { getProductImageUrls } from "../service/product.service";
 import useCart from "../hooks/useCart";
 import useRequireLogin from "../hooks/useRequireLogin";
 import { getProducById } from "../service/product.service";
+import type { BuyNowState } from "../types/order";
 import type { ProductItem } from "../types/product";
+import { variantLabel } from "../utils/order";
+import { formatPrice } from "../utils/format";
 
 interface Props {
   productId: number;
@@ -47,12 +51,6 @@ const getProductFromResponse = (
   return null;
 };
 
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(price);
 
 export default function DetailProduct({ productId }: Props) {
   const validProductId = Number.isInteger(productId) && productId > 0;
@@ -77,12 +75,28 @@ export default function DetailProduct({ productId }: Props) {
     buyNow: boolean,
   ) => {
     if (!requireLogin()) return;
+    // Mua ngay: sang thẳng trang đặt hàng, không thêm vào giỏ
+    if (buyNow && product) {
+      const variant = product.variants?.find((item) => (item.id ?? item.variantId) === variantId);
+      const unitPrice = product.price ?? 0;
+      const buyNowState: BuyNowState = {
+        variantId,
+        quantity,
+        line: {
+          key: variantId,
+          name: product.name,
+          image: getProductImageUrls(product)[0],
+          variantLabel: variantLabel(variant?.name, variant?.size),
+          unitPrice,
+          quantity,
+          lineTotal: unitPrice * quantity,
+        },
+      };
+      navigate("/checkout", { state: { buyNow: buyNowState } });
+      return;
+    }
     try {
       await addCart({ variantId, quantity });
-      if (buyNow) {
-        navigate("/cart");
-        return;
-      }
       messageApi.success("Đã thêm sản phẩm vào giỏ hàng.");
     } catch (purchaseError) {
       if (handleAuthError(purchaseError)) return;
@@ -126,13 +140,7 @@ export default function DetailProduct({ productId }: Props) {
       (total, variant) => total + (variant.stock ?? variant.initialStock ?? 0),
       0,
     );
-  const images = Array.from(
-    new Set(
-      [...(product.images ?? []), product.image].filter(
-        (image): image is string => typeof image === "string" && image.length > 0,
-      ),
-    ),
-  );
+  const images = Array.from(new Set(getProductImageUrls(product)));
   if (images.length === 0) {
     images.push(
       "https://i.pinimg.com/736x/b6/6e/0c/b66e0c1552b3a284b9e20f55db5236e1.jpg",
@@ -183,7 +191,6 @@ export default function DetailProduct({ productId }: Props) {
               />
             </div>
           </section>
-
           <ProductDescription
             description={product.description}
             pdfUrl={product.descriptionPdfUrl}

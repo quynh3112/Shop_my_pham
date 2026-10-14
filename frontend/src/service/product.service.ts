@@ -1,5 +1,5 @@
 import { api } from "../config/api";
-import type { ProductCreate, ProductQuery, ProductUpdate } from "../types/product";
+import type { ProductCreate, ProductItem, ProductQuery, ProductUpdate } from "../types/product";
 const endpoint = "/product";
 export const createProduct=async(product:ProductCreate)=>{
     const token=localStorage.getItem('token')
@@ -11,7 +11,13 @@ export const createProduct=async(product:ProductCreate)=>{
     return res.data
 }
 export const getProducts=async(query?: ProductQuery)=>{
-    const res=await api.get(endpoint, { params: query })
+    // Mảng gửi dạng "oily,dry" để backend đọc được bất kể cách parse query string
+    const params = query && Object.fromEntries(
+        Object.entries(query).map(([key, value]) => [key, Array.isArray(value) ? value.join(",") : value]),
+    )
+    // Đã đăng nhập thì gửi kèm token để "Dành cho bạn" dùng sở thích của khách (API vẫn công khai)
+    const token=localStorage.getItem('token')
+    const res=await api.get(endpoint, { params, headers: token ? { Authorization:`Bearer ${token}` } : undefined })
 
     return res.data
 }
@@ -22,6 +28,11 @@ export const removeProduct=async(id:number)=>{
             Authorization:`Bearer ${token}` 
         }
     })
+    return res.data
+}
+// Sản phẩm bán chạy (backend bù bằng sản phẩm mới nếu chưa đủ)
+export const getBestSellers=async(limit=12):Promise<ProductItem[]>=>{
+    const res=await api.get(`${endpoint}/best-sellers`,{params:{limit}})
     return res.data
 }
 export const getProducById=async(id:number)=>{
@@ -59,3 +70,31 @@ export const removeDescriptionPdf=async(id:number)=>{
 }
 export const toFileUrl=(path:string)=>
     /^https?:\/\//.test(path) ? path : `${api.defaults.baseURL}${path}`
+
+// Tải nhiều ảnh cho sản phẩm (JPG/PNG/WEBP/GIF, tối đa 5MB mỗi ảnh)
+export const uploadProductImages=async(id:number,files:File[])=>{
+    const token=localStorage.getItem('token')
+    const formData=new FormData()
+    files.forEach((file)=>formData.append('images',file))
+    const res=await api.post(`${endpoint}/${id}/images`,formData,{
+        headers:{
+            Authorization:`Bearer ${token}`
+        }
+    })
+    return res.data
+}
+export const removeProductImage=async(imageId:number)=>{
+    const token=localStorage.getItem('token')
+    const res=await api.delete(`${endpoint}/images/${imageId}`,{
+        headers:{
+            Authorization:`Bearer ${token}`
+        }
+    })
+    return res.data
+}
+// URL đầy đủ của các ảnh sản phẩm theo thứ tự hiển thị
+export const getProductImageUrls=(product:ProductItem)=>
+    [...(product.images ?? []).map((image)=>typeof image==="string"?image:image.url), product.image]
+        .filter((url):url is string=>typeof url==="string" && url.length>0)
+        .map(toFileUrl)
+export const getProductCover=(product:ProductItem)=>getProductImageUrls(product)[0]

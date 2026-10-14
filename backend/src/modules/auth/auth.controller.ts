@@ -14,6 +14,7 @@ import { JwtAuthGuard } from '../guard/jwt-auth.guard';
 import { LocalAuthGuard } from '../guard/local-auth.guard';
 import {
   ForgotPasswordDto,
+  RefreshTokenDto,
   RegisterDto,
   ResendRegisterOtpDto,
   ResetPasswordDto,
@@ -76,9 +77,17 @@ export class AuthController {
   profile(@Request() req: any) {
     return req.user
   }
+  // Access token hết hạn (15 phút) -> đổi refresh token lấy cặp token mới
+  @Post('refresh')
+  @HttpCode(200)
+  refresh(@Body() data: RefreshTokenDto) {
+    return this.authService.refreshAccessToken(data.userId, data.refreshToken);
+  }
+
+  // Thu hồi refresh token của phiên hiện tại
   @Post('logout')
-  logout(@Request() req){
-
-
+  @HttpCode(200)
+  logout(@Body() data: RefreshTokenDto) {
+    return this.authService.logout(data.userId, data.refreshToken);
   }
 }

@@ -8,7 +8,8 @@ export interface PaymentOrderInfo{
 }
 export interface PaymentInitResult{
     paymentStatus:PaymentStatus
-    redicecUrl?:string
+    /** Trang thanh toán khách cần được chuyển tới (MoMo...), COD thì không có */
+    redirectUrl?:string
 
 }
 export interface PaymentProvider {

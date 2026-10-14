@@ -16,7 +16,9 @@ import {
 } from '@nestjs/common';
 import { AnyFilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../guard/jwt-auth.guard';
-import { RoleGuard } from '../guard/role.guard';
+import { OptionalJwtAuthGuard } from '../guard/optional-jwt-auth.guard';
+import { PermissionGuard } from '../guard/permission.guard';
+import { RequirePermission } from '../guard/require-permission.decorator';
 import type {
 	ProductCreateInput,
 	ProductQuery,
@@ -24,17 +26,26 @@ import type {
 } from './dto/product.dto';
 import { ProductService } from './product.service';
 
+@RequirePermission('products')
 @Controller('product')
 export class 
 ProductController {
 	constructor(private readonly productService: ProductService) {}
 
+	// Đăng nhập tuỳ chọn: có token thì sắp xếp "Dành cho bạn" dùng sở thích của khách
 	@Get()
-	list(@Query() query: ProductQuery) {
-		return this.productService.listProducts(query);
+	@UseGuards(OptionalJwtAuthGuard)
+	list(@Query() query: ProductQuery, @Req() request: { user?: { userId?: number } | null }) {
+		return this.productService.listProducts(query, { userId: request.user?.userId });
 	}
 
 
+
+	// Đặt trước ':id' để không bị hiểu nhầm là id sản phẩm
+	@Get('best-sellers')
+	bestSellers(@Query('limit') limit?: string) {
+		return this.productService.listBestSellers(limit);
+	}
 
 	@Get(':id')
 	getById(@Param('id', ParseIntPipe) id: number) {
@@ -42,13 +53,13 @@ ProductController {
 	}
 
 	@Post()
-	@UseGuards(JwtAuthGuard, RoleGuard)
+	@UseGuards(JwtAuthGuard, PermissionGuard)
 	create(@Body() input: ProductCreateInput, @Req() request: any) {
 		return this.productService.createProduct(input, request.user.userId);
 	}
 
 	@Patch(':id')
-	@UseGuards(JwtAuthGuard, RoleGuard)
+	@UseGuards(JwtAuthGuard, PermissionGuard)
 	update(
 		@Param('id', ParseIntPipe) id: number,
 		@Body() input: ProductUpdateInput,
@@ -58,14 +69,16 @@ ProductController {
 	}
 
 	@Delete(':id')
-	@UseGuards(JwtAuthGuard, RoleGuard)
+	@UseGuards(JwtAuthGuard, PermissionGuard)
 	remove(@Param('id', ParseIntPipe) id: number, @Req() request: any) {
 		return this.productService.removeProduct(id, request.user.userId);
 	}
 
 	@Post(':id/images')
-	@UseGuards(JwtAuthGuard, RoleGuard)
-	@UseInterceptors(AnyFilesInterceptor())
+	@UseGuards(JwtAuthGuard, PermissionGuard)
+	@UseInterceptors(
+		AnyFilesInterceptor({ limits: { fileSize: 5 * 1024 * 1024, files: 10 } }),
+	)
 	addImages(
 		@Param('id', ParseIntPipe) id: number,
 		@UploadedFiles() files: Array<{ buffer: Buffer }>,
@@ -74,7 +87,7 @@ ProductController {
 	}
 
 	@Post(':id/description-pdf')
-	@UseGuards(JwtAuthGuard, RoleGuard)
+	@UseGuards(JwtAuthGuard, PermissionGuard)
 	@UseInterceptors(
 		FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }),
 	)
@@ -86,13 +99,13 @@ ProductController {
 	}
 
 	@Delete(':id/description-pdf')
-	@UseGuards(JwtAuthGuard, RoleGuard)
+	@UseGuards(JwtAuthGuard, PermissionGuard)
 	removeDescriptionPdf(@Param('id', ParseIntPipe) id: number) {
 		return this.productService.removeDescriptionPdf(id);
 	}
 
 	@Delete('images/:imageId')
-	@UseGuards(JwtAuthGuard, RoleGuard)
+	@UseGuards(JwtAuthGuard, PermissionGuard)
 	removeImage(@Param('imageId', ParseIntPipe) imageId: number) {
 		return this.productService.removeProductImage(imageId);
 	}

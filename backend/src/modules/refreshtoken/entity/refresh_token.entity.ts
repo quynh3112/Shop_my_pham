@@ -18,8 +18,9 @@ export class RefreshToken {
   userId!: number;
   @Column()
   expireAt!: Date;
-  @Column()
-  revokeAt!: Date;
+  // null = token còn hiệu lực
+  @Column({ type: 'timestamp', nullable: true })
+  revokeAt!: Date | null;
   @ManyToOne(() => User, (user) => user.refreshTokens, {
     onDelete: 'CASCADE',
   })

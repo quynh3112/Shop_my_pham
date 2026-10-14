@@ -8,11 +8,11 @@ import { PaymentProviderRegistry } from '../payment/payment-provider.registry';
 import { InventoryMovementService } from '../inventory_movement/inventory_movement.service';
 import { InventoryMovementModule } from '../inventory_movement/inventory_movement.module';
 import { PaymentModule } from '../payment/payment.module';
-import { RoleGuard } from '../guard/role.guard';
+import { PermissionGuard } from '../guard/permission.guard';
 
 @Module({
   controllers: [OrderController],
-  providers: [OrderService, RoleGuard],
+  providers: [OrderService, PermissionGuard],
   imports:[TypeOrmModule.forFeature([Order]),InventoryMovementModule,PaymentModule],
   
 })

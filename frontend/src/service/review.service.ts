@@ -1,5 +1,5 @@
 ﻿import { api } from "../config/api";
-import type { ReviewCreate } from "../types/review";
+import type { MyReviewStatus, ReviewCreate, ReviewUpdate } from "../types/review";
 
 const endpoint = "reviews";
 
@@ -38,7 +38,7 @@ export const purchasedProductsNotReviewed = async () => {
 
 export const updateMyReview = async (
   reviewId: number,
-  payload: ReviewCreate,
+  payload: ReviewUpdate,
 ) => {
   const res = await api.patch(`${endpoint}/${reviewId}`, payload, {
     headers: authHeaders(),
@@ -58,6 +58,13 @@ export const avgRatingInProduct = async (productId: number) => {
 };
 export const reviewsInProduct = async (productId: number) => {
   const res = await api.get(`${endpoint}/product/${productId}`);
+  return res.data;
+};
+// Đã mua chưa, được viết đánh giá không, đánh giá của tôi là cái nào
+export const getMyReviewStatus = async (productId: number): Promise<MyReviewStatus> => {
+  const res = await api.get(`${endpoint}/product/${productId}/me`, {
+    headers: authHeaders(),
+  });
   return res.data;
 };
 export const deleteMyReview = async (reviewId: number) =>

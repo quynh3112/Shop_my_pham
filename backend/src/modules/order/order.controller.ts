@@ -9,16 +9,20 @@ import {
   Query,
   Req,
   UseGuards,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { Role } from '../user/entity/user.entity';
 import { JwtAuthGuard } from '../guard/jwt-auth.guard';
-import { RoleGuard } from '../guard/role.guard';
+import { PermissionGuard } from '../guard/permission.guard';
+import { RequirePermission } from '../guard/require-permission.decorator';
 import {
   AdminOrderListQueryDto,
   OrderBuyNowDto,
   OrderCreateDto,
   OrderListQueryDto,
   OrderStatusDto,
+  MomoSandboxDto,
   PaymentStatusDto,
 } from './dto/order.dto';
 import { OrderService } from './order.service';
@@ -30,8 +34,11 @@ interface AuthenticatedRequest {
   };
 }
 
+@RequirePermission('orders')
 @Controller('order')
 @UseGuards(JwtAuthGuard)
+// transform: query page/limit là chuỗi -> số và lấy giá trị mặc định trong DTO
+@UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
@@ -58,25 +65,35 @@ export class OrderController {
     return this.orderService.getMyOrder(request.user.userId, code);
   }
 
+  /** MoMo giả lập: khách xác nhận / huỷ thanh toán trên trang thử nghiệm */
+  @Post('my/:code/momo-sandbox')
+  confirmMomoSandbox(
+    @Param('code') code: string,
+    @Body() body: MomoSandboxDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.orderService.confirmMomoSandbox(request.user.userId, code, body.success);
+  }
+
   @Patch('my/:code/cancel')
   cancelMyOrder(@Param('code') code: string, @Req() request: AuthenticatedRequest) {
     return this.orderService.cancelMyOrder(request.user.userId, code);
   }
 
   @Get('admin')
-  @UseGuards(RoleGuard)
+  @UseGuards(PermissionGuard)
   listAllOrders(@Query() query: AdminOrderListQueryDto) {
     return this.orderService.listAllOrders(query);
   }
 
   @Get('admin/:code')
-  @UseGuards(RoleGuard)
+  @UseGuards(PermissionGuard)
   getOrderByCode(@Param('code') code: string) {
     return this.orderService.getOrderByCode(code);
   }
 
   @Patch('admin/:id/status')
-  @UseGuards(RoleGuard)
+  @UseGuards(PermissionGuard)
   updateOrderStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: OrderStatusDto,
@@ -86,7 +103,7 @@ export class OrderController {
   }
 
   @Patch('admin/:id/payment-status')
-  @UseGuards(RoleGuard)
+  @UseGuards(PermissionGuard)
   updatePaymentStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: PaymentStatusDto,

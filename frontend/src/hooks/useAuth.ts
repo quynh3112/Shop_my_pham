@@ -10,7 +10,7 @@ import {
     verifyRegisterOtp,
     verifyResetOtp,
 } from "../service/user.service";
-import { notifyAuthChanged } from "../utils/auth";
+import { notifyAuthChanged, saveTokens } from "../utils/auth";
 
 // Lấy message lỗi backend trả về (ValidationPipe trả về dạng mảng)
 const getErrorMessage=(err:any,fallback:string)=>{
@@ -39,7 +39,8 @@ export default function useAuth(){
 
     const saveSession=(res:AuthResponse|null)=>{
         if(res){
-            localStorage.setItem('token',res.accessToken)
+            // Lưu cả refresh token để tự gia hạn phiên khi access token (15 phút) hết hạn
+            saveTokens(res.accessToken,res.refreshToken)
             localStorage.setItem("user", JSON.stringify(res.user))
             // Báo cho Header, giỏ hàng... cập nhật lại theo người dùng mới
             notifyAuthChanged()

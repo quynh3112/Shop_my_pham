@@ -54,3 +54,6 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Ảnh khuôn mặt khách hàng (phân tích da) - dữ liệu riêng tư, không commit
+/storage

@@ -9,6 +9,8 @@ import {
 	Post,
 	Req,
 	UseGuards,
+	UsePipes,
+	ValidationPipe,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../guard/jwt-auth.guard';
 import { AddressService } from './address.service';
@@ -16,6 +18,7 @@ import { AddressCreateDto } from './dto/create-address.dto';
 
 @Controller('address')
 @UseGuards(JwtAuthGuard)
+@UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class AddressController {
 	constructor(private readonly addressService: AddressService) {}
 

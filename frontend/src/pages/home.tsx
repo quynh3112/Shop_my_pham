@@ -1,27 +1,19 @@
-import { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import useProduct from "../hooks/useProduct";
-import useRequireLogin from "../hooks/useRequireLogin";
-import { ArrowRightOutlined, ShoppingCartOutlined } from "@ant-design/icons";
-import { Card } from "antd";
+import { Link } from "react-router-dom";
+import HomeProductSection from "../component/homeProductSection";
+import { useBestSellers, useNewProducts } from "../hooks/useProductCollections";
 
 export default function Home() {
-  const { products, fetchProducts } = useProduct();
-  const navigate = useNavigate();
-  const { requireLogin } = useRequireLogin();
-
-  useEffect(() => {
-    void fetchProducts({ sort: "newest", page: 1, limit: 4 });
-  }, []);
+  const bestSellers = useBestSellers();
+  const newProducts = useNewProducts();
 
   return (
     <div>
-      <div className="relative border border-[#e88f98] mt-10">
-        {/* sparkle trên */}
+      {/* <div className="relative border border-[#e88f98] mt-10">
+       
         <span className="absolute -top-5 left-[20%] text-3xl text-[#c87985]">
           ✦
         </span>
-      </div>
+      </div> */}
       <div className="relative h-screen ">
         <div className="w-[50%] ml-[50px] absolute left-0">
           <h2 className="text-7xl font-['Bodoni_72'] font-bold text-black mt-10">
@@ -146,50 +138,22 @@ export default function Home() {
           ✦
         </span>
       </div>
-      <div className="flex flex-col items-center justify-center px-6 py-10">
-        <h2 className="text-7xl font-['Bodoni_72'] font-bold text-center">
-          PRODUCT <span className="font-['Allura']">bestseller</span>
-        </h2>
-        <div className="grid grid-cols-4 gap-4 mt-10 ">
-          {products.map((product) => (
-            <div
-              key={product.id}
-              className="rounded-lg overflow-hidden  h-[515px]"
-            >
-              <Card
-                className="group relative cursor-pointer overflow-hidden rounded-lg h-[430px]"
-                onClick={() => navigate(`/product/${product.id}`)}
-              >
-                <img src={product.image} alt={product.name} />
-                <div className="absolute inset-0 bg-[#c87985]/30 opacity-0 transition duration-500 group-hover:opacity-100"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className=" font-semibold text-white opacity-0 translate-y-4 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-0">
-                    view more
-                  </span>
-                </div>
-              </Card>
-              <div className="product-name"> {product.name}</div>
-              <div className="product-price">
-                <p>{product.price?.toFixed(0)}vnd</p>
-                <button
-                  type="button"
-                  aria-label={`Thêm ${product.name} vào giỏ hàng`}
-                  className="hover:text-[#E16463]"
-                  onClick={() => {
-                    // Cần chọn phân loại ở trang chi tiết trước khi thêm vào giỏ
-                    if (requireLogin()) navigate(`/product/${product.id}`);
-                  }}
-                >
-                  <ShoppingCartOutlined />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-        <Link to="/products" className="text-xl !text-[#E16463] font-bold hover:underline">
-          Show more <ArrowRightOutlined className="inline-block w-4 h-4 ml-1" />
-        </Link>
+      <HomeProductSection
+        label="Sản phẩm bán chạy"
+        title={<>PRODUCT <span className="font-['Allura']">bestseller</span></>}
+        products={bestSellers.products}
+        loading={bestSellers.loading}
+      />
+      <div className="relative border border-[#e88f98]">
+        <span className="absolute -top-5 left-[60%] text-3xl text-[#c87985]">✦</span>
       </div>
+      <HomeProductSection
+        label="Sản phẩm mới"
+        title={<>NEW <span className="font-['Allura']">arrivals</span></>}
+        products={newProducts.products}
+        loading={newProducts.loading}
+        moreLink="/products?sort=newest"
+      />
     </div>
   );
 }

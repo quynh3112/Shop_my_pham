@@ -213,11 +213,11 @@ export class InventoryMovementService {
       size: string | null;
       productName: string;
     }> = await manager.query(
-      `SELECT v.id, v.stock, v.name, v.size, p.name AS productName
+      `SELECT v.id, v.stock, v.name, v.size, p.name AS "productName"
          FROM product_variants v
-         INNER JOIN product p ON p.id = v.productId
-         WHERE v.id = ?
-         FOR UPDATE`,
+         INNER JOIN products p ON p.id = v."productId"
+         WHERE v.id = $1
+         FOR UPDATE OF v`,
       [input.variantId],
     );
     const variant = rows[0];

@@ -24,6 +24,10 @@ import { AuthModule } from './modules/auth/auth.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { FavoritesModule } from './modules/favorites/favorites.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import { SkinAnalysisModule } from './modules/skin-analysis/skin-analysis.module';
+import { StaffModule } from './modules/staff/staff.module';
+import { CustomerModule } from './modules/customer/customer.module';
+import { ReportModule } from './modules/report/report.module';
 
 @Module({
   imports:[
@@ -61,7 +65,11 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
     ChatMessageModule,
     PaymentModule,
     FavoritesModule,
-    ReviewsModule
+    ReviewsModule,
+    SkinAnalysisModule,
+    StaffModule,
+    CustomerModule,
+    ReportModule,
   ],
   controllers: [AppController, RefreshtokenController],
   providers: [AppService],

@@ -102,6 +102,8 @@ export class AuthService {
       email: user.email,
       phone: user.phone,
       role: user.role,
+      // Chỉ dùng cho kết nối chat (WebSocket); API quản lý luôn đọc quyền mới nhất từ DB
+      permissions: user.permissions ?? [],
     };
 
     const accessToken = await this.jwtService.signAsync(payload, {
@@ -125,7 +127,7 @@ export class AuthService {
         userId,
         tokenHash,
         expireAt,
-        revokeAt: new Date(),
+        revokeAt: null,
       }),
     );
 
@@ -156,12 +158,15 @@ export class AuthService {
 
     const user = await this.userService.findUserById(userId);
     if (!user) throw new UnauthorizedException('Tài khoản không còn tồn tại.');
+    if (!user.isActive) throw new UnauthorizedException('Tài khoản của bạn đã bị khoá.');
 
     const payload = {
       sub: user.id,
       email: user.email,
       phone: user.phone,
       role: user.role,
+      // Chỉ dùng cho kết nối chat (WebSocket); API quản lý luôn đọc quyền mới nhất từ DB
+      permissions: user.permissions ?? [],
     };
     const accessToken = await this.jwtService.signAsync(payload, {
       expiresIn: '15m',
